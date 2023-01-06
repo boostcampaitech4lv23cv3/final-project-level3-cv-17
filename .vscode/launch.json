@@ -1,0 +1,13 @@
+{
+    "configurations": [
+        {
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "name": "Python: 현재 파일",
+            "program": "${file}",
+            "request": "launch",
+            "type": "python"
+        }
+    ],
+    "version": "0.1.0"
+}
