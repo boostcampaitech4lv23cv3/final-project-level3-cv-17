@@ -1,5 +1,5 @@
 [tool.autoflake]
-exclude                   = ['__init__.py']
+exclude                   = ['__init__.py', 'mmyolo/']
 expand-star-imports       = true
 in-place                  = true
 recursive                 = true
@@ -8,8 +8,13 @@ remove-duplicate-keys     = true
 remove-unused-variables   = true
 
 [tool.black]
-color          = true
-line-length    = 88
+color = true
+extend-exclude = '''
+(
+  (mmyolo|artifacts|wandb|work_dirs)/*
+)
+'''
+line-length = 88
 target-version = ["py38"]
 
 [tool.isort]
@@ -18,7 +23,7 @@ color_output = true
 float_to_top = true
 profile      = 'black'
 py_version   = 38
-
+skip_glob    = ["mmyolo/**"]
 [tool.pylint.format]
 disable         = 'E0401,C0116,R0913'
 max-line-length = '88'
