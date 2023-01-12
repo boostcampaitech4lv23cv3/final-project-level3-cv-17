@@ -1,0 +1,12 @@
+# pack-refs with: peeled fully-peeled sorted 
+6153603ac10c179bbbcc05c2e8ec762640117c77 refs/remotes/origin/damo-yolo
+c682ae82c60383e5716e088fd0e54d2d1e3c4da1 refs/remotes/origin/dev
+b0cf0732412d9d7a69f5b7fb9368dab8be6983cc refs/remotes/origin/main
+b0cf0732412d9d7a69f5b7fb9368dab8be6983cc refs/remotes/origin/v8
+1bccbcbb8b1481732757e3352f71f4117ea54ece refs/remotes/origin/yolov5_seg
+84f115c4e57856ab63417fb9b781db88fe10ccf1 refs/tags/v0.1.0
+e482e3a17c502592752f59ba37b953f41cfce71a refs/tags/v0.1.1
+0b48313dc757a26ad3087aa17f0991833bd7cc91 refs/tags/v0.1.2
+178b0bf3ffec1353923460670bcbafccc15121cf refs/tags/v0.1.3
+27487fd587398348d59eb8c40af740cabee6b7fe refs/tags/v0.2.0
+b0cf0732412d9d7a69f5b7fb9368dab8be6983cc refs/tags/v0.3.0
