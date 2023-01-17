@@ -56,6 +56,7 @@ After File Structure:
     ┣━━ 📝 total.json (10.1 MB)
     ┗━━ 📝 total_pretty.json (17.4 MB)
 """
+import copy
 import json
 from pathlib import Path
 
@@ -94,8 +95,13 @@ def get_bbox_area(_data):
     x2 = bottom_right["x"]
     y2 = bottom_right["y"]
 
+    xmin = min(x1, x2)
+    ymin = min(y1, y2)
+    width = abs(x1 - x2)
+    height = abs(y1 - y2)
+
     area = (x2 - x1) * (y2 - y1)
-    bbox = [x1, y1, x2, y2]
+    bbox = [xmin, ymin, width, height]
 
     return bbox, area
 
@@ -103,7 +109,7 @@ def get_bbox_area(_data):
 if __name__ == "__main__":
     image_id, ann_id = 1, 1
 
-    total_data = DATA.copy()
+    total_data = copy.deepcopy(DATA)
 
     for step_dir in AIHUB_DIR.iterdir():
         if step_dir.is_file():
@@ -112,7 +118,7 @@ if __name__ == "__main__":
         label_dir = step_dir / "라벨링데이터_1007_add"
         image_dir = step_dir / "원천데이터_0906_add"
 
-        step_data = DATA.copy()
+        step_data = copy.deepcopy(DATA)
 
         for category_dir in label_dir.iterdir():
             category_id = CATEGORIES[category_dir.name]
@@ -131,7 +137,8 @@ if __name__ == "__main__":
                 image_path = image_dir / category_dir.name / f"{_stem}.{_suffix}"
                 img = Image.open(image_path)
 
-                image_name = str(image_path.relative_to(AIHUB_DIR))
+                # image_name = str(image_path.relative_to(AIHUB_DIR))
+                image_name = f"{_stem}.{_suffix}"
                 image = {
                     "file_name": image_name,
                     "height": img.height,
@@ -177,7 +184,7 @@ if __name__ == "__main__":
         ensure_ascii=False,
     )
     json.dump(
-        step_data,
+        total_data,
         open(AIHUB_DIR / "total_pretty.json", "w", encoding="utf8"),
         indent=4,
         ensure_ascii=False,
