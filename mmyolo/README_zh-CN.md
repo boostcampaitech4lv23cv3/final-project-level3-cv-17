@@ -160,6 +160,7 @@ MMYOLO 用法和 MMDetection 几乎一致，所有教程都是通用的，你也
     - [YOLOv5 原理和实现全解析](docs/zh_cn/algorithm_descriptions/yolov5_description.md)
     - [YOLOv6 原理和实现全解析](docs/zh_cn/algorithm_descriptions/yolov6_description.md)
     - [RTMDet 原理和实现全解析](docs/zh_cn/algorithm_descriptions/rtmdet_description.md)
+    - [YOLOv8 原理和实现全解析](docs/zh_cn/algorithm_descriptions/yolov8_description.md)
 
 - 算法部署
 
@@ -190,6 +191,7 @@ MMYOLO 用法和 MMDetection 几乎一致，所有教程都是通用的，你也
 - [x] [YOLOv6](configs/yolov6)
 - [x] [YOLOv7](configs/yolov7)
 - [x] [PPYOLOE](configs/ppyoloe)
+- [ ] [YOLOv8](configs/yolov8)（仅推理）
 
 </details>
 
