@@ -9,3 +9,6 @@
 [branch "main"]
 	remote = origin
 	merge = refs/heads/main
+[branch "dev"]
+	remote = origin
+	merge = refs/heads/dev
