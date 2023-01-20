@@ -1,0 +1,29 @@
+model:
+  # NOTE: 아래 명시된 config와 pth 경로 중 하나의 파일이라도 없을 경우 에러가 발생한다.
+  - name: yolov5_l-p6-v62_syncbn_fast_8xb16-300e_coco
+    config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolov5/yolov5_l-p6-v62_syncbn_fast_8xb16-300e_coco.py
+    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov5_l-p6-v62_syncbn_fast_8xb16-300e_coco/epoch_300.pth
+  - name: yolov6_l_syncbn_fast_8xb32-300e_coco
+    config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolov6/yolov6_l_syncbn_fast_8xb32-300e_coco.py
+    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov6_l_syncbn_fast_8xb32-300e_coco/epoch_300.pth
+  - name: yolov7_l_syncbn_fast_8x16b-300e_coco
+    config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolov7/yolov7_l_syncbn_fast_8x16b-300e_coco.py
+    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov7_l_syncbn_fast_8x16b-300e_coco/epoch_300.pth
+  - name: yolov8_l_syncbn_fast_8xb16-500e_coco
+    config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolov8/yolov8_l_syncbn_fast_8xb16-500e_coco.py
+    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_l_syncbn_fast_8xb16-500e_coco/epoch_500.pth
+  - name: yolox_l_8xb8-300e_coco
+    config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolox/yolox_l_8xb8-300e_coco.py
+    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolox_l_8xb8-300e_coco/epoch_300.pth
+image:
+  directory: /opt/ml/input/image/
+  format:
+    - .jpg
+    - .png
+video:
+  directory: /opt/ml/input/video/
+  format:
+    - .mp4
+server:
+  host: 0.0.0.0
+  port: 8001
