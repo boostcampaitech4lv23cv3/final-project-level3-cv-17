@@ -1,4 +1,5 @@
-8eefed39ef3f7710fce53e100dda6e8a87ad9167		branch 'dev' of https://github.com/open-mmlab/mmyolo
+e62c8c4593702d23e5a75d940d9158aa4ea418ae		branch 'dev' of https://github.com/open-mmlab/mmyolo
 6153603ac10c179bbbcc05c2e8ec762640117c77	not-for-merge	branch 'damo-yolo' of https://github.com/open-mmlab/mmyolo
-b0cf0732412d9d7a69f5b7fb9368dab8be6983cc	not-for-merge	branch 'main' of https://github.com/open-mmlab/mmyolo
+e62c8c4593702d23e5a75d940d9158aa4ea418ae	not-for-merge	branch 'main' of https://github.com/open-mmlab/mmyolo
 1bccbcbb8b1481732757e3352f71f4117ea54ece	not-for-merge	branch 'yolov5_seg' of https://github.com/open-mmlab/mmyolo
+e62c8c4593702d23e5a75d940d9158aa4ea418ae	not-for-merge	tag 'v0.4.0' of https://github.com/open-mmlab/mmyolo
