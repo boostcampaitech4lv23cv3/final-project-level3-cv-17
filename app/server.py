@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import List
 
-import yaml
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, FilePath
 
