@@ -41,8 +41,10 @@ def get_model_by_name(model_name: str) -> Model:
 def _get_filepaths(key: str) -> List[FilePath]:
     config = read_config()
     directory = Path(config[key]['directory'])
-    formats = ','.join(config[key]['format'])
-    return [FilePath(_path) for _path in directory.glob(f'**/*{{{formats}}}')]
+    formats = config[key]["format"]
+    return [
+        _path for format in formats for _path in directory.glob(f"**/*{format}")
+    ]
 
 
 @app.get('/images')
