@@ -1,10 +1,17 @@
+import logging
 from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, FilePath
+from rich.logging import RichHandler
 
 from .config import read_config
+
+logging.basicConfig(
+    level="NOTSET", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()]
+)
+log = logging.getLogger("rich")
 
 app = FastAPI()
 
@@ -22,16 +29,19 @@ def _get_models() -> List[Model]:
 
 @app.get("/config")
 def get_config() -> dict:
+    log.info("GET /config")
     return read_config()
 
 
 @app.get('/models')
 def get_models() -> List[Model]:
+    log.info("GET /models")
     return _get_models()
 
 
 @app.get('/model')
 def get_model_by_name(model_name: str) -> Model:
+    log.info(f"GET /model (model_name={model_name!r})")
     for model in _get_models():
         if model.name == model_name:
             return model
@@ -49,16 +59,19 @@ def _get_filepaths(key: str) -> List[FilePath]:
 
 @app.get('/images')
 def get_images() -> List[FilePath]:
+    log.info("GET /images")
     return _get_filepaths('image')
 
 
 @app.get('/videos')
 def get_videos() -> List[FilePath]:
+    log.info("GET /images")
     return _get_filepaths('video')
 
 
 @app.get('/image')
 def get_image(filepath: FilePath) -> bytes:
+    log.info(f"GET /image (filepath={filepath!r})")
     image_file = open(filepath, 'rb')
     # image = Image.open(io.BytesIO(image_bytes))
     return image_file.read()
@@ -66,6 +79,7 @@ def get_image(filepath: FilePath) -> bytes:
 
 @app.get('/video')
 def get_video(filepath: FilePath) -> bytes:
+    log.info(f"GET /video (filepath={filepath!r})")
     video_file = open(filepath, 'rb')
     # st.video(video_bytes)
     return video_file.read()
@@ -92,12 +106,12 @@ def _identify_media(filepath: FilePath) -> str:
 
 def _inference_image(model: Model, image_filepath: FilePath) -> FilePath:
     # TODO
-    return
+    return image_filepath
 
 
 def _inference_video(model: Model, video_filepath: FilePath) -> FilePath:
     # TODO
-    return
+    return video_filepath
 
 
 class InferenceBody(BaseModel):
@@ -107,15 +121,16 @@ class InferenceBody(BaseModel):
 
 @app.post('/inference')
 async def inference(body: InferenceBody) -> FilePath:
-    model_name = body.model_name
-    media_filepath = body.media_filepath
+    log.info("POST /inference")
+    log.info(f"  - model_name={body.model_name!r}")
+    log.info(f"  - media_filepath={body.media_filepath!r}")
     
-    model = get_model_by_name(model_name)
-    media_type = _identify_media(media_filepath)
+    model = get_model_by_name(body.model_name)
+    media_type = _identify_media(body.media_filepath)
     if media_type == 'image':
-        return _inference_image(model, media_filepath)
+        return _inference_image(model, body.media_filepath)
 
-    return _inference_video(model, media_filepath)
+    return _inference_video(model, body.media_filepath)
 
 
 if __name__ == '__main__':
