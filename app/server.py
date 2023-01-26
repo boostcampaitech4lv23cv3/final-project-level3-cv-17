@@ -99,8 +99,16 @@ def _inference_video(model: Model, video_filepath: FilePath) -> FilePath:
     return
 
 
+class InferenceBody(BaseModel):
+    model_name: str
+    media_filepath: FilePath
+
+
 @app.post('/inference')
-def inference(model_name: str, media_filepath: FilePath) -> FilePath:
+async def inference(body: InferenceBody) -> FilePath:
+    model_name = body.model_name
+    media_filepath = body.media_filepath
+    
     model = get_model_by_name(model_name)
     media_type = _identify_media(media_filepath)
     if media_type == 'image':
