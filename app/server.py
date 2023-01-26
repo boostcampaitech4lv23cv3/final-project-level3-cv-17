@@ -21,6 +21,11 @@ def _get_models() -> List[Model]:
     return [Model(**m) for m in config['model']]
 
 
+@app.get("/config")
+def get_config() -> dict:
+    return read_config()
+
+
 @app.get('/models')
 def get_models() -> List[Model]:
     return _get_models()
