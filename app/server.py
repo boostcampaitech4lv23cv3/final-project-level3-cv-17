@@ -9,8 +9,6 @@ from .config import read_config
 
 app = FastAPI()
 
-config = read_config()
-
 
 class Model(BaseModel):
     name: str
@@ -19,6 +17,7 @@ class Model(BaseModel):
 
 
 def _get_models() -> List[Model]:
+    config = read_config()
     return [Model(**m) for m in config['model']]
 
 
@@ -36,6 +35,7 @@ def get_model_by_name(model_name: str) -> Model:
 
 
 def _get_filepaths(key: str) -> List[FilePath]:
+    config = read_config()
     directory = Path(config[key]['directory'])
     formats = ','.join(config[key]['format'])
     return [FilePath(_path) for _path in directory.glob(f'**/*{{{formats}}}')]
@@ -66,10 +66,12 @@ def get_video(filepath: FilePath) -> bytes:
 
 
 def _is_image_file(filepath: FilePath) -> bool:
+    config = read_config()
     return filepath.suffix in config['image']['format']
 
 
 def _is_video_file(filepath: FilePath) -> bool:
+    config = read_config()
     return filepath.suffix in config['video']['format']
 
 
@@ -103,6 +105,8 @@ def inference(model_name: str, media_filepath: FilePath) -> FilePath:
 
 
 if __name__ == '__main__':
+    config = read_config()
+    
     import uvicorn
 
     uvicorn.run(
