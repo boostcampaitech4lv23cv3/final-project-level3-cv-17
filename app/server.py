@@ -5,12 +5,11 @@ import yaml
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, FilePath
 
-CONFIG_FILE = 'config.yml'
+from .config import read_config
 
 app = FastAPI()
 
-config_path = Path(__file__).with_name(CONFIG_FILE)
-config = yaml.safe_load(open(config_path, encoding='utf8'))
+config = read_config()
 
 
 class Model(BaseModel):
