@@ -69,22 +69,6 @@ def get_videos() -> List[FilePath]:
     return _get_filepaths('video')
 
 
-@app.get('/image')
-def get_image(filepath: FilePath) -> bytes:
-    log.info(f"GET /image (filepath={filepath!r})")
-    image_file = open(filepath, 'rb')
-    # image = Image.open(io.BytesIO(image_bytes))
-    return image_file.read()
-
-
-@app.get('/video')
-def get_video(filepath: FilePath) -> bytes:
-    log.info(f"GET /video (filepath={filepath!r})")
-    video_file = open(filepath, 'rb')
-    # st.video(video_bytes)
-    return video_file.read()
-
-
 def _is_image_file(filepath: FilePath) -> bool:
     config = read_config()
     return filepath.suffix in config['image']['format']
