@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import List
 
@@ -95,9 +96,15 @@ def _identify_media(filepath: FilePath) -> str:
         raise HTTPException(status_code=500, detail="미디어의 형식을 인식할 수 없습니다")
 
 
+def _get_visualizer_name(filepath: FilePath) -> str:
+    datetime_str = datetime.now().strftime("%Y-%m-%d %H;%M;%S")
+    return f"{filepath.name} {datetime_str}"
+
+
 def _inference_image(model_info: ModelInfo, image_filepath: FilePath) -> FilePath:
     register_all_modules()
     model = init_detector(model_info.config, str(model_info.pth), device="cuda:0")
+    model.cfg.visualizer["name"] = _get_visualizer_name(image_filepath)
     visualizer = VISUALIZERS.build(model.cfg.visualizer)
     visualizer.dataset_meta = model.dataset_meta
     files, source_type = get_file_list(str(image_filepath))
@@ -121,6 +128,7 @@ def _inference_image(model_info: ModelInfo, image_filepath: FilePath) -> FilePat
 def _inference_video(model_info: ModelInfo, video_filepath: FilePath) -> FilePath:
     register_all_modules()
     model = init_detector(model_info.config, str(model_info.pth), device="cuda:0")
+    model.cfg.visualizer["name"] = _get_visualizer_name(video_filepath)
     model.cfg.test_dataloader.dataset.pipeline[0].type = "mmdet.LoadImageFromNDArray"
     test_pipeline = Compose(model.cfg.test_dataloader.dataset.pipeline)
     visualizer = VISUALIZERS.build(model.cfg.visualizer)
