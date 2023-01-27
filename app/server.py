@@ -16,15 +16,15 @@ log = logging.getLogger("rich")
 app = FastAPI()
 
 
-class Model(BaseModel):
+class ModelInfo(BaseModel):
     name: str
     config: FilePath
     pth: FilePath
 
 
-def _get_models() -> List[Model]:
+def _get_models() -> List[ModelInfo]:
     config = read_config()
-    return [Model(**m) for m in config['model']]
+    return [ModelInfo(**m) for m in config['model']]
 
 
 @app.get("/config")
@@ -34,18 +34,18 @@ def get_config() -> dict:
 
 
 @app.get('/models')
-def get_models() -> List[Model]:
+def get_models() -> List[ModelInfo]:
     log.info("GET /models")
     return _get_models()
 
 
 @app.get('/model')
-def get_model_by_name(model_name: str) -> Model:
+def get_model_by_name(model_name: str) -> ModelInfo:
     log.info(f"GET /model (model_name={model_name!r})")
     for model in _get_models():
         if model.name == model_name:
             return model
-    raise HTTPException(status_code=404, detail='모델을 찾을 수 없습니다')
+    raise HTTPException(status_code=404, detail="모델을 찾을 수 없습니다")
 
 
 def _get_filepaths(key: str) -> List[FilePath]:
@@ -88,12 +88,12 @@ def _identify_media(filepath: FilePath) -> str:
         raise HTTPException(status_code=500, detail='미디어의 형식을 인식할 수 없습니다')
 
 
-def _inference_image(model: Model, image_filepath: FilePath) -> FilePath:
+def _inference_image(model_info: ModelInfo, image_filepath: FilePath) -> FilePath:
     # TODO
     return image_filepath
 
 
-def _inference_video(model: Model, video_filepath: FilePath) -> FilePath:
+def _inference_video(model_info: ModelInfo, video_filepath: FilePath) -> FilePath:
     # TODO
     return video_filepath
 
@@ -108,7 +108,7 @@ async def inference(body: InferenceBody) -> FilePath:
     log.info("POST /inference")
     log.info(f"  - model_name={body.model_name!r}")
     log.info(f"  - media_filepath={body.media_filepath!r}")
-    
+
     model = get_model_by_name(body.model_name)
     media_type = _identify_media(body.media_filepath)
     if media_type == 'image':
@@ -119,7 +119,7 @@ async def inference(body: InferenceBody) -> FilePath:
 
 if __name__ == '__main__':
     config = read_config()
-    
+
     import uvicorn
 
     uvicorn.run(
