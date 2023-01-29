@@ -1,0 +1,20 @@
+total_pretty.json : '주행 차량 관점의 특수 차량 형상 데이터'
+
+total_ver2.json : '주행 차량 관점의 특수 차량 형상 데이터' (재어노테이션 + 불필요한 이미지 삭제)
+
+total_ver3.json : '주행 차량 관점의 특수 차량 형상 데이터' (재어노테이션 + 불필요한 이미지 삭제)
+                    + '자율주행 및 ADAS AI인지모델 학습용 데이터' (재어노테이션 + 불필요한 이미지 삭제) 
+                    class {
+                        1: 'ambulance',
+                        2: 'fire truck',
+                        3: 'ladder truck',
+                        4: 'police car'
+                    }
+
+total_ver4.json : '주행 차량 관점의 특수 차량 형상 데이터' (재어노테이션 + 불필요한 이미지 삭제)
+                    + '자율주행 및 ADAS AI인지모델 학습용 데이터' (재어노테이션 + 불필요한 이미지 삭제) 
+                    class {
+                        1: 'ambulance',
+                        2: 'fire truck',  (fire truck + ladder truck)
+                        3: 'police car'
+                    }
