@@ -6,19 +6,26 @@ _base_ = (
 data_root = "/opt/ml/input/car/"
 dataset_type = "YOLOv5CocoDataset"
 
-class_name = ("ambulance", "fire truck", "ladder truck")
+class_name = ("ambulance", "fire truck", "ladder truck", "police car")
 metainfo = dict(classes=class_name)
 
 # parameters that often need to be modified
+num_classes = 4
 img_scale = (640, 640)  # width, height
+deepen_factor = 0.33
+widen_factor = 0.5
 max_epochs = 300
-save_epoch_intervals = 5
+save_epoch_intervals = 10
 train_batch_size_per_gpu = 16
 train_num_workers = 8
+val_batch_size_per_gpu = 1
+val_num_workers = 2
+
 # persistent_workers must be False if num_workers is 0.
 persistent_workers = True
-val_batch_size_per_gpu = 8
-val_num_workers = 2
+
+# Base learning rate for optim_wrapper
+base_lr = 0.01
 
 # only on Val
 batch_shapes_cfg = dict(
@@ -29,15 +36,13 @@ batch_shapes_cfg = dict(
     extra_pad_ratio=0.5,
 )
 
-# different from yolov5
 anchors = [
-    [(12, 16), (19, 36), (40, 28)],  # P3/8
-    [(36, 75), (76, 55), (72, 146)],  # P4/16
-    [(142, 110), (192, 243), (459, 401)],  # P5/32
+    [(10, 13), (16, 30), (33, 23)],  # P3/8
+    [(30, 61), (62, 45), (59, 119)],  # P4/16
+    [(116, 90), (156, 198), (373, 326)],  # P5/32
 ]
 strides = [8, 16, 32]
 num_det_layers = 3
-num_classes = 3
 
 # single-scale training is recommended to
 # be turned on, which can speed up training.
@@ -46,39 +51,35 @@ env_cfg = dict(cudnn_benchmark=True)
 model = dict(
     type="YOLODetector",
     data_preprocessor=dict(
-        type="YOLOv5DetDataPreprocessor",
+        type="mmdet.DetDataPreprocessor",
         mean=[0.0, 0.0, 0.0],
         std=[255.0, 255.0, 255.0],
         bgr_to_rgb=True,
     ),
     backbone=dict(
-        type="YOLOv7Backbone",
-        arch="L",
+        type="YOLOv5CSPDarknet",
+        deepen_factor=deepen_factor,
+        widen_factor=widen_factor,
         norm_cfg=dict(type="BN", momentum=0.03, eps=0.001),
         act_cfg=dict(type="SiLU", inplace=True),
     ),
     neck=dict(
-        type="YOLOv7PAFPN",
-        block_cfg=dict(
-            type="ELANBlock",
-            middle_ratio=0.5,
-            block_ratio=0.25,
-            num_blocks=4,
-            num_convs_in_block=1,
-        ),
-        upsample_feats_cat_first=False,
-        in_channels=[512, 1024, 1024],
-        # The real output channel will be multiplied by 2
-        out_channels=[128, 256, 512],
+        type="YOLOv5PAFPN",
+        deepen_factor=deepen_factor,
+        widen_factor=widen_factor,
+        in_channels=[256, 512, 1024],
+        out_channels=[256, 512, 1024],
+        num_csp_blocks=3,
         norm_cfg=dict(type="BN", momentum=0.03, eps=0.001),
         act_cfg=dict(type="SiLU", inplace=True),
     ),
     bbox_head=dict(
-        type="YOLOv7Head",
+        type="YOLOv5Head",
         head_module=dict(
-            type="YOLOv7HeadModule",
+            type="YOLOv5HeadModule",
             num_classes=num_classes,
             in_channels=[256, 512, 1024],
+            widen_factor=widen_factor,
             featmap_strides=strides,
             num_base_priors=3,
         ),
@@ -90,12 +91,13 @@ model = dict(
             type="mmdet.CrossEntropyLoss",
             use_sigmoid=True,
             reduction="mean",
-            loss_weight=0.3 * (num_classes / 3 * 3 / num_det_layers),
+            loss_weight=0.5 * (num_classes / 80 * 3 / num_det_layers),
         ),
         loss_bbox=dict(
             type="IoULoss",
             iou_mode="ciou",
             bbox_format="xywh",
+            eps=1e-7,
             reduction="mean",
             loss_weight=0.05 * (3 / num_det_layers),
             return_iou=True,
@@ -104,14 +106,10 @@ model = dict(
             type="mmdet.CrossEntropyLoss",
             use_sigmoid=True,
             reduction="mean",
-            loss_weight=0.7 * ((img_scale[0] / 640) ** 2 * 3 / num_det_layers),
+            loss_weight=1.0 * ((img_scale[0] / 640) ** 2 * 3 / num_det_layers),
         ),
-        obj_level_weights=[4.0, 1.0, 0.4],
-        # BatchYOLOv7Assigner params
         prior_match_thr=4.0,
-        simota_candidate_topk=10,
-        simota_iou_weight=3.0,
-        simota_cls_weight=1.0,
+        obj_level_weights=[4.0, 1.0, 0.4],
     ),
     test_cfg=dict(
         multi_label=True,
@@ -122,12 +120,20 @@ model = dict(
     ),
 )
 
+albu_train_transforms = [
+    dict(type="Blur", p=0.01),
+    dict(type="MedianBlur", p=0.01),
+    dict(type="ToGray", p=0.01),
+    dict(type="CLAHE", p=0.01),
+]
+
 pre_transform = [
     dict(type="LoadImageFromFile", file_client_args=_base_.file_client_args),
     dict(type="LoadAnnotations", with_bbox=True),
 ]
 
-mosiac4_pipeline = [
+train_pipeline = [
+    *pre_transform,
     dict(
         type="Mosaic", img_scale=img_scale, pad_val=114.0, pre_transform=pre_transform
     ),
@@ -135,45 +141,20 @@ mosiac4_pipeline = [
         type="YOLOv5RandomAffine",
         max_rotate_degree=0.0,
         max_shear_degree=0.0,
-        max_translate_ratio=0.2,  # note
-        scaling_ratio_range=(0.1, 2.0),  # note
+        scaling_ratio_range=(0.5, 1.5),
         # img_scale is (width, height)
         border=(-img_scale[0] // 2, -img_scale[1] // 2),
         border_val=(114, 114, 114),
     ),
-]
-
-mosiac9_pipeline = [
     dict(
-        type="Mosaic9", img_scale=img_scale, pad_val=114.0, pre_transform=pre_transform
-    ),
-    dict(
-        type="YOLOv5RandomAffine",
-        max_rotate_degree=0.0,
-        max_shear_degree=0.0,
-        max_translate_ratio=0.2,  # note
-        scaling_ratio_range=(0.1, 2.0),  # note
-        # img_scale is (width, height)
-        border=(-img_scale[0] // 2, -img_scale[1] // 2),
-        border_val=(114, 114, 114),
-    ),
-]
-
-randchoice_mosaic_pipeline = dict(
-    type="RandomChoice",
-    transforms=[mosiac4_pipeline, mosiac9_pipeline],
-    prob=[0.8, 0.2],
-)
-
-train_pipeline = [
-    *pre_transform,
-    randchoice_mosaic_pipeline,
-    dict(
-        type="YOLOv5MixUp",
-        alpha=8.0,  # note
-        beta=8.0,  # note
-        prob=0.15,
-        pre_transform=[*pre_transform, randchoice_mosaic_pipeline],
+        type="mmdet.Albu",
+        transforms=albu_train_transforms,
+        bbox_params=dict(
+            type="BboxParams",
+            format="pascal_voc",
+            label_fields=["gt_bboxes_labels", "gt_ignore_flags"],
+        ),
+        keymap={"img": "image", "gt_bboxes": "bboxes"},
     ),
     dict(type="YOLOv5HSVRandomAug"),
     dict(type="mmdet.RandomFlip", prob=0.5),
@@ -196,12 +177,11 @@ train_dataloader = dict(
     persistent_workers=persistent_workers,
     pin_memory=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
-    collate_fn=dict(type="yolov5_collate"),  # FASTER
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
         metainfo=metainfo,
-        ann_file="annotations/1.Training.json",
+        ann_file="annotations/total_ver3.json",
         data_prefix=dict(img="images/"),
         filter_cfg=dict(filter_empty_gt=False, min_size=32),
         pipeline=train_pipeline,
@@ -244,7 +224,7 @@ val_dataloader = dict(
         metainfo=metainfo,
         test_mode=True,
         data_prefix=dict(img="images/"),
-        ann_file="annotations/2.Validation.json",
+        ann_file="annotations/total_ver3.json",
         pipeline=test_pipeline,
         batch_shapes_cfg=batch_shapes_cfg,
     ),
@@ -257,44 +237,28 @@ optim_wrapper = dict(
     type="OptimWrapper",
     optimizer=dict(
         type="SGD",
-        lr=0.01,
+        lr=base_lr,
         momentum=0.937,
         weight_decay=0.0005,
         nesterov=True,
         batch_size_per_gpu=train_batch_size_per_gpu,
     ),
-    constructor="YOLOv7OptimWrapperConstructor",
+    constructor="YOLOv5OptimizerConstructor",
 )
 
 default_hooks = dict(
     param_scheduler=dict(
         type="YOLOv5ParamSchedulerHook",
-        scheduler_type="cosine",
-        lr_factor=0.1,  # note
+        scheduler_type="linear",
+        lr_factor=0.01,
         max_epochs=max_epochs,
     ),
     checkpoint=dict(
         type="CheckpointHook",
-        save_param_scheduler=False,
-        interval=1,
+        interval=save_epoch_intervals,
         save_best="auto",
         max_keep_ckpts=3,
     ),
-)
-
-val_evaluator = dict(
-    type="mmdet.CocoMetric",
-    proposal_nums=(100, 1, 10),  # Can be accelerated
-    ann_file=data_root + "annotations/2.Validation.json",
-    metric="bbox",
-)
-test_evaluator = val_evaluator
-
-train_cfg = dict(
-    type="EpochBasedTrainLoop",
-    max_epochs=max_epochs,
-    val_interval=save_epoch_intervals,
-    dynamic_intervals=[(270, 1)],
 )
 
 custom_hooks = [
@@ -308,7 +272,16 @@ custom_hooks = [
     )
 ]
 
+val_evaluator = dict(
+    type="mmdet.CocoMetric",
+    proposal_nums=(100, 1, 10),
+    ann_file=data_root + "annotations/total_ver3.json",
+    metric="bbox",
+)
+test_evaluator = val_evaluator
+
+train_cfg = dict(
+    type="EpochBasedTrainLoop", max_epochs=max_epochs, val_interval=save_epoch_intervals
+)
 val_cfg = dict(type="ValLoop")
 test_cfg = dict(type="TestLoop")
-
-# randomness = dict(seed=1, deterministic=True)

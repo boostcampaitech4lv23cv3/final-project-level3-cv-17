@@ -6,11 +6,11 @@ _base_ = (
 data_root = "/opt/ml/input/car/"
 dataset_type = "YOLOv5CocoDataset"
 
-class_name = ('ambulance', 'fire truck', 'ladder truck')
+class_name = ("ambulance", "fire truck", "ladder truck", "police car")
 metainfo = dict(classes=class_name)
 
 # parameters that often need to be modified
-num_classes = 3
+num_classes = 4
 img_scale = (640, 640)  # height, width
 deepen_factor = 0.33
 widen_factor = 0.5
@@ -206,7 +206,7 @@ train_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         metainfo=metainfo,
-        ann_file="annotations/1.Training.json",
+        ann_file="annotations/total_ver3.json",
         data_prefix=dict(img="images/"),
         filter_cfg=dict(filter_empty_gt=False, min_size=32),
         pipeline=train_pipeline,
@@ -260,7 +260,7 @@ val_dataloader = dict(
         metainfo=metainfo,
         test_mode=True,
         data_prefix=dict(img="images/"),
-        ann_file="annotations/2.Validation.json",
+        ann_file="annotations/total_ver3.json",
         pipeline=test_pipeline,
         batch_shapes_cfg=batch_shapes_cfg,
     ),
@@ -317,7 +317,7 @@ custom_hooks = [
 val_evaluator = dict(
     type="mmdet.CocoMetric",
     proposal_nums=(100, 1, 10),
-    ann_file=data_root + "annotations/2.Validation.json",
+    ann_file=data_root + "annotations/total_ver3.json",
     metric="bbox",
 )
 test_evaluator = val_evaluator
