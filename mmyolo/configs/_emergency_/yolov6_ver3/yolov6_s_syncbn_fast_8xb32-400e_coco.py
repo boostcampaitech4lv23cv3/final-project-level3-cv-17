@@ -1,6 +1,4 @@
-_base_ = (
-    "/opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/default_runtime.py"
-)
+_base_ = "../_base_/default_runtime.py"
 
 # dataset settings
 data_root = "/opt/ml/input/car/"

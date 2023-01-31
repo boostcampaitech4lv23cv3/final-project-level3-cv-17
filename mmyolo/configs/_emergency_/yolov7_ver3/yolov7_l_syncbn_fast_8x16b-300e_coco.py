@@ -1,5 +1,5 @@
 _base_ = (
-    "/opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/default_runtime.py"
+    "../_base_/default_runtime.py"
 )
 
 # dataset settings
@@ -122,7 +122,7 @@ model = dict(
     ),
 )
 
-pre_transform4 = [
+pre_transform = [
     dict(type="LoadImageFromFile", file_client_args=_base_.file_client_args),
     dict(type="LoadAnnotations", with_bbox=True),
 ]
@@ -285,7 +285,7 @@ default_hooks = dict(
 val_evaluator = dict(
     type="mmdet.CocoMetric",
     proposal_nums=(100, 1, 10),  # Can be accelerated
-    ann_file=data_root + "annotations/total_ver3.json.json",
+    ann_file=data_root + "annotations/total_ver3.json",
     metric="bbox",
 )
 test_evaluator = val_evaluator
