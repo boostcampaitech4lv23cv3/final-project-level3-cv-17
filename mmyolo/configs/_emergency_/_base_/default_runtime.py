@@ -1,5 +1,22 @@
 default_scope = "mmyolo"
 
+# dataset version 3
+# num_classes = 4
+# metainfo = dict(
+#     classes=("ambulance", "fire truck", "ladder truck", "police car")
+# )
+
+# dataset version 4
+# num_classes = 3
+# metainfo = dict(
+#     classes=("ambulance", "fire truck", "police car")
+# )
+
+# data directory and annotation file paths
+data_root = "/opt/ml/input/"
+train_ann_file = "labels/*.json"
+val_ann_file = "labels/*.json"
+
 default_hooks = dict(
     timer=dict(type="IterTimerHook"),
     logger=dict(type="LoggerHook", interval=50),

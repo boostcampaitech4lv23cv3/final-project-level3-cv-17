@@ -24,7 +24,7 @@ model = dict(
     ),
 )
 
-mosiac4_pipeline = [
+mosaic4_pipeline = [
     dict(
         type="Mosaic", img_scale=img_scale, pad_val=114.0, pre_transform=pre_transform
     ),
@@ -40,7 +40,7 @@ mosiac4_pipeline = [
     ),
 ]
 
-mosiac9_pipeline = [
+mosaic9_pipeline = [
     dict(
         type="Mosaic9", img_scale=img_scale, pad_val=114.0, pre_transform=pre_transform
     ),
@@ -57,7 +57,7 @@ mosiac9_pipeline = [
 
 randchoice_mosaic_pipeline = dict(
     type="RandomChoice",
-    transforms=[mosiac4_pipeline, mosiac9_pipeline],
+    transforms=[mosaic4_pipeline, mosaic9_pipeline],
     prob=[0.8, 0.2],
 )
 

@@ -1,13 +1,10 @@
-_base_ = (
-    "../_base_/default_runtime.py"
-)
+_base_ = "../_base_/default_runtime.py"
 
 # dataset settings
-data_root = "/opt/ml/input/car/"
+data_root = _base_.data_root
 dataset_type = "YOLOv5CocoDataset"
 
-class_name = ("ambulance", "fire truck", "ladder truck", "police car")
-metainfo = dict(classes=class_name)
+metainfo = _base_.metainfo
 
 # parameters that often need to be modified
 img_scale = (640, 640)  # width, height
@@ -37,7 +34,7 @@ anchors = [
 ]
 strides = [8, 16, 32]
 num_det_layers = 3
-num_classes = 4
+num_classes = _base_.num_classes
 
 # single-scale training is recommended to
 # be turned on, which can speed up training.
@@ -127,7 +124,7 @@ pre_transform = [
     dict(type="LoadAnnotations", with_bbox=True),
 ]
 
-mosiac4_pipeline = [
+mosaic4_pipeline = [
     dict(
         type="Mosaic", img_scale=img_scale, pad_val=114.0, pre_transform=pre_transform
     ),
@@ -143,7 +140,7 @@ mosiac4_pipeline = [
     ),
 ]
 
-mosiac9_pipeline = [
+mosaic9_pipeline = [
     dict(
         type="Mosaic9", img_scale=img_scale, pad_val=114.0, pre_transform=pre_transform
     ),
@@ -161,7 +158,7 @@ mosiac9_pipeline = [
 
 randchoice_mosaic_pipeline = dict(
     type="RandomChoice",
-    transforms=[mosiac4_pipeline, mosiac9_pipeline],
+    transforms=[mosaic4_pipeline, mosaic9_pipeline],
     prob=[0.8, 0.2],
 )
 
@@ -201,7 +198,7 @@ train_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         metainfo=metainfo,
-        ann_file="annotations/total_ver3.json",
+        ann_file=_base_.train_ann_file,
         data_prefix=dict(img="images/"),
         filter_cfg=dict(filter_empty_gt=False, min_size=32),
         pipeline=train_pipeline,
@@ -244,7 +241,7 @@ val_dataloader = dict(
         metainfo=metainfo,
         test_mode=True,
         data_prefix=dict(img="images/"),
-        ann_file="annotations/total_ver3.json",
+        ann_file=_base_.val_ann_file,
         pipeline=test_pipeline,
         batch_shapes_cfg=batch_shapes_cfg,
     ),
@@ -285,7 +282,7 @@ default_hooks = dict(
 val_evaluator = dict(
     type="mmdet.CocoMetric",
     proposal_nums=(100, 1, 10),  # Can be accelerated
-    ann_file=data_root + "annotations/total_ver3.json",
+    ann_file=data_root + _base_.val_ann_file,
     metric="bbox",
 )
 test_evaluator = val_evaluator

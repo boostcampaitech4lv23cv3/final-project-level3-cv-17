@@ -1,22 +1,18 @@
 _base_ = "../_base_/default_runtime.py"
 
 # dataset settings
-data_root = "/opt/ml/input/car/"
+data_root = _base_.data_root
 dataset_type = "YOLOv5CocoDataset"
 
-class_name = ("ambulance", "fire truck", "police car")
-metainfo = dict(classes=class_name)
-
-num_last_epochs = 15
-max_epochs = 400
-num_classes = 3
+metainfo = _base_.metainfo
 
 # parameters that often need to be modified
-img_scale = (640, 640)  # width, height
+num_classes = _base_.num_classes
+img_scale = (640, 640)  # height, width
 deepen_factor = 0.33
 widen_factor = 0.5
-affine_scale = 0.5
-save_epoch_intervals = 5
+max_epochs = 500
+save_epoch_intervals = 1
 train_batch_size_per_gpu = 16
 train_num_workers = 8
 val_batch_size_per_gpu = 8
@@ -25,17 +21,14 @@ val_num_workers = 2
 # persistent_workers must be False if num_workers is 0.
 persistent_workers = True
 
+strides = [8, 16, 32]
+num_det_layers = 3
+
+last_stage_out_channels = 1024
+
 # Base learning rate for optim_wrapper
 base_lr = 0.01
-
-# only on Val
-batch_shapes_cfg = dict(
-    type="BatchShapePolicy",
-    batch_size=val_batch_size_per_gpu,
-    img_size=img_scale[0],
-    size_divisor=32,
-    extra_pad_ratio=0.5,
-)
+lr_factor = 0.01
 
 # single-scale training is recommended to
 # be turned on, which can speed up training.
@@ -50,74 +43,117 @@ model = dict(
         bgr_to_rgb=True,
     ),
     backbone=dict(
-        type="YOLOv6EfficientRep",
+        type="YOLOv8CSPDarknet",
+        arch="P5",
+        last_stage_out_channels=last_stage_out_channels,
         deepen_factor=deepen_factor,
         widen_factor=widen_factor,
         norm_cfg=dict(type="BN", momentum=0.03, eps=0.001),
-        act_cfg=dict(type="ReLU", inplace=True),
+        act_cfg=dict(type="SiLU", inplace=True),
     ),
     neck=dict(
-        type="YOLOv6RepPAFPN",
+        type="YOLOv8PAFPN",
         deepen_factor=deepen_factor,
         widen_factor=widen_factor,
-        in_channels=[256, 512, 1024],
-        out_channels=[128, 256, 512],
-        num_csp_blocks=12,
+        in_channels=[256, 512, last_stage_out_channels],
+        out_channels=[256, 512, last_stage_out_channels],
+        num_csp_blocks=3,
         norm_cfg=dict(type="BN", momentum=0.03, eps=0.001),
-        act_cfg=dict(type="ReLU", inplace=True),
+        act_cfg=dict(type="SiLU", inplace=True),
     ),
     bbox_head=dict(
-        type="YOLOv6Head",
+        type="YOLOv8Head",
         head_module=dict(
-            type="YOLOv6HeadModule",
+            type="YOLOv8HeadModule",
             num_classes=num_classes,
-            in_channels=[128, 256, 512],
+            in_channels=[256, 512, last_stage_out_channels],
             widen_factor=widen_factor,
+            reg_max=16,
             norm_cfg=dict(type="BN", momentum=0.03, eps=0.001),
             act_cfg=dict(type="SiLU", inplace=True),
             featmap_strides=[8, 16, 32],
         ),
+        prior_generator=dict(
+            type="mmdet.MlvlPointGenerator", offset=0.5, strides=[8, 16, 32]
+        ),
+        bbox_coder=dict(type="DistancePointBBoxCoder"),
+        loss_cls=dict(
+            type="mmdet.CrossEntropyLoss",
+            use_sigmoid=True,
+            reduction="none",
+            loss_weight=0.5,
+        ),
         loss_bbox=dict(
             type="IoULoss",
-            iou_mode="giou",
+            iou_mode="ciou",
             bbox_format="xyxy",
-            reduction="mean",
-            loss_weight=2.5,
+            reduction="sum",
+            loss_weight=7.5,
             return_iou=False,
+        ),
+        # Since the dfloss is implemented differently in the official
+        # and mmdet, we're going to divide loss_weight by 4.
+        loss_dfl=dict(
+            type="mmdet.DistributionFocalLoss", reduction="mean", loss_weight=1.5 / 4
         ),
     ),
     train_cfg=dict(
-        initial_epoch=4,
-        initial_assigner=dict(
-            type="BatchATSSAssigner",
-            num_classes=num_classes,
-            topk=9,
-            iou_calculator=dict(type="mmdet.BboxOverlaps2D"),
-        ),
         assigner=dict(
             type="BatchTaskAlignedAssigner",
             num_classes=num_classes,
-            topk=13,
-            alpha=1,
-            beta=6,
-        ),
+            use_ciou=True,
+            topk=10,
+            alpha=0.5,
+            beta=6.0,
+            eps=1e-9,
+        )
     ),
     test_cfg=dict(
         multi_label=True,
         nms_pre=30000,
         score_thr=0.001,
-        nms=dict(type="nms", iou_threshold=0.65),
+        nms=dict(type="nms", iou_threshold=0.7),
         max_per_img=300,
     ),
 )
 
-# The training pipeline of YOLOv6 is basically the same as YOLOv5.
-# The difference is that Mosaic and RandomAffine will be closed in the last 15 epochs. # noqa
+albu_train_transform = [
+    dict(type="Blur", p=0.01),
+    dict(type="MedianBlur", p=0.01),
+    dict(type="ToGray", p=0.01),
+    dict(type="CLAHE", p=0.01),
+]
+
 pre_transform = [
     dict(type="LoadImageFromFile", file_client_args=_base_.file_client_args),
     dict(type="LoadAnnotations", with_bbox=True),
 ]
 
+last_transform = [
+    dict(
+        type="mmdet.Albu",
+        transforms=albu_train_transform,
+        bbox_params=dict(
+            type="BboxParams",
+            format="pascal_voc",
+            label_fields=["gt_bboxes_labels", "gt_ignore_flags"],
+        ),
+        keymap={"img": "image", "gt_bboxes": "bboxes"},
+    ),
+    dict(type="YOLOv5HSVRandomAug"),
+    dict(type="mmdet.RandomFlip", prob=0.5),
+    dict(
+        type="mmdet.PackDetInputs",
+        meta_keys=(
+            "img_id",
+            "img_path",
+            "ori_shape",
+            "img_shape",
+            "flip",
+            "flip_direction",
+        ),
+    ),
+]
 train_pipeline = [
     *pre_transform,
     dict(
@@ -126,68 +162,48 @@ train_pipeline = [
     dict(
         type="YOLOv5RandomAffine",
         max_rotate_degree=0.0,
-        max_translate_ratio=0.1,
-        scaling_ratio_range=(1 - affine_scale, 1 + affine_scale),
+        max_shear_degree=0.0,
+        scaling_ratio_range=(0.5, 1.5),
+        max_aspect_ratio=100,
         # img_scale is (width, height)
         border=(-img_scale[0] // 2, -img_scale[1] // 2),
         border_val=(114, 114, 114),
-        max_shear_degree=0.0,
     ),
-    dict(type="YOLOv5HSVRandomAug"),
-    dict(type="mmdet.RandomFlip", prob=0.5),
-    dict(
-        type="mmdet.PackDetInputs",
-        meta_keys=(
-            "img_id",
-            "img_path",
-            "ori_shape",
-            "img_shape",
-            "flip",
-            "flip_direction",
-        ),
-    ),
+    *last_transform,
 ]
 
 train_pipeline_stage2 = [
     *pre_transform,
     dict(type="YOLOv5KeepRatioResize", scale=img_scale),
     dict(
-        type="LetterResize", scale=img_scale, allow_scale_up=True, pad_val=dict(img=114)
+        type="LetterResize",
+        scale=img_scale,
+        allow_scale_up=True,
+        pad_val=dict(img=114.0),
     ),
     dict(
         type="YOLOv5RandomAffine",
         max_rotate_degree=0.0,
-        max_translate_ratio=0.1,
-        scaling_ratio_range=(1 - affine_scale, 1 + affine_scale),
         max_shear_degree=0.0,
+        scaling_ratio_range=(0.5, 1.5),
+        max_aspect_ratio=100,
+        border_val=(114, 114, 114),
     ),
-    dict(type="YOLOv5HSVRandomAug"),
-    dict(type="mmdet.RandomFlip", prob=0.5),
-    dict(
-        type="mmdet.PackDetInputs",
-        meta_keys=(
-            "img_id",
-            "img_path",
-            "ori_shape",
-            "img_shape",
-            "flip",
-            "flip_direction",
-        ),
-    ),
+    *last_transform,
 ]
 
 train_dataloader = dict(
     batch_size=train_batch_size_per_gpu,
     num_workers=train_num_workers,
-    collate_fn=dict(type="yolov5_collate"),
     persistent_workers=persistent_workers,
     pin_memory=True,
     sampler=dict(type="DefaultSampler", shuffle=True),
+    collate_fn=dict(type="yolov5_collate"),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
         metainfo=metainfo,
-        ann_file="annotations/total_ver4.json",
+        ann_file=_base_.train_ann_file,
         data_prefix=dict(img="images/"),
         filter_cfg=dict(filter_empty_gt=False, min_size=32),
         pipeline=train_pipeline,
@@ -217,6 +233,17 @@ test_pipeline = [
     ),
 ]
 
+# only on Val
+# you can turn on `batch_shapes_cfg`,
+# we tested YOLOv8-m will get 0.02 higher than not using it.
+batch_shapes_cfg = None
+# batch_shapes_cfg = dict(
+#     type='BatchShapePolicy',
+#     batch_size=val_batch_size_per_gpu,
+#     img_size=img_scale[0],
+#     size_divisor=32,
+#     extra_pad_ratio=0.5)
+
 val_dataloader = dict(
     batch_size=val_batch_size_per_gpu,
     num_workers=val_num_workers,
@@ -230,7 +257,7 @@ val_dataloader = dict(
         metainfo=metainfo,
         test_mode=True,
         data_prefix=dict(img="images/"),
-        ann_file="annotations/total_ver4.json",
+        ann_file=_base_.val_ann_file,
         pipeline=test_pipeline,
         batch_shapes_cfg=batch_shapes_cfg,
     ),
@@ -238,10 +265,10 @@ val_dataloader = dict(
 
 test_dataloader = val_dataloader
 
-# Optimizer and learning rate scheduler of YOLOv6 are basically the same as YOLOv5. # noqa
-# The difference is that the scheduler_type of YOLOv6 is cosine.
+param_scheduler = None
 optim_wrapper = dict(
     type="OptimWrapper",
+    clip_grad=dict(max_norm=10.0),
     optimizer=dict(
         type="SGD",
         lr=base_lr,
@@ -256,15 +283,15 @@ optim_wrapper = dict(
 default_hooks = dict(
     param_scheduler=dict(
         type="YOLOv5ParamSchedulerHook",
-        scheduler_type="cosine",
-        lr_factor=0.01,
+        scheduler_type="linear",
+        lr_factor=lr_factor,
         max_epochs=max_epochs,
     ),
     checkpoint=dict(
         type="CheckpointHook",
         interval=save_epoch_intervals,
-        max_keep_ckpts=3,
         save_best="auto",
+        max_keep_ckpts=2,
     ),
 )
 
@@ -279,7 +306,7 @@ custom_hooks = [
     ),
     dict(
         type="mmdet.PipelineSwitchHook",
-        switch_epoch=max_epochs - num_last_epochs,
+        switch_epoch=max_epochs - 10,
         switch_pipeline=train_pipeline_stage2,
     ),
 ]
@@ -287,7 +314,7 @@ custom_hooks = [
 val_evaluator = dict(
     type="mmdet.CocoMetric",
     proposal_nums=(100, 1, 10),
-    ann_file=data_root + "annotations/total_ver4.json",
+    ann_file=data_root + _base_.val_ann_file,
     metric="bbox",
 )
 test_evaluator = val_evaluator
@@ -296,7 +323,8 @@ train_cfg = dict(
     type="EpochBasedTrainLoop",
     max_epochs=max_epochs,
     val_interval=save_epoch_intervals,
-    dynamic_intervals=[(max_epochs - num_last_epochs, 1)],
+    dynamic_intervals=[(max_epochs - 10, 1)],
 )
+
 val_cfg = dict(type="ValLoop")
 test_cfg = dict(type="TestLoop")

@@ -1,7 +1,7 @@
 _base_ = "./yolov7_l_syncbn_fast_8x16b-300e_coco.py"
 
 img_scale = (1280, 1280)  # height, width
-num_classes = 3
+num_classes = _base_.num_classes
 # only on Val
 batch_shapes_cfg = dict(img_size=img_scale[0], size_divisor=64)
 
@@ -44,7 +44,7 @@ model = dict(
 
 pre_transform = _base_.pre_transform
 
-mosiac4_pipeline = [
+mosaic4_pipeline = [
     dict(
         type="Mosaic", img_scale=img_scale, pad_val=114.0, pre_transform=pre_transform
     ),
@@ -60,7 +60,7 @@ mosiac4_pipeline = [
     ),
 ]
 
-mosiac9_pipeline = [
+mosaic9_pipeline = [
     dict(
         type="Mosaic9", img_scale=img_scale, pad_val=114.0, pre_transform=pre_transform
     ),
@@ -78,7 +78,7 @@ mosiac9_pipeline = [
 
 randchoice_mosaic_pipeline = dict(
     type="RandomChoice",
-    transforms=[mosiac4_pipeline, mosiac9_pipeline],
+    transforms=[mosaic4_pipeline, mosaic9_pipeline],
     prob=[0.8, 0.2],
 )
 
