@@ -1,21 +1,25 @@
 default_scope = "mmyolo"
 
-# dataset version 3
-# num_classes = 4
-# metainfo = dict(
-#     classes=("ambulance", "fire truck", "ladder truck", "police car")
-# )
+# choose dataset version
+# dataset_version = "ver3"
+dataset_version = "ver4"
 
-# dataset version 4
-# num_classes = 3
-# metainfo = dict(
-#     classes=("ambulance", "fire truck", "police car")
-# )
+if dataset_version == "ver3":
+    num_classes = 4
+    classes=("ambulance", "fire truck", "ladder truck", "police car")
+    train_ann_file = "labels/*.json"
+    val_ann_file = "labels/*.json"
+elif dataset_version == "ver4":
+    num_classes = 3
+    classes=("ambulance", "fire truck", "police car")
+    train_ann_file = "labels/*.json"
+    val_ann_file = "labels/*.json"
 
-# data directory and annotation file paths
+metainfo = dict(classes=classes)
+dataset_prefix = dataset_version
+
+# dataset directory
 data_root = "/opt/ml/input/"
-train_ann_file = "labels/*.json"
-val_ann_file = "labels/*.json"
 
 default_hooks = dict(
     timer=dict(type="IterTimerHook"),
@@ -40,6 +44,7 @@ vis_backends = [
             "entity": "boostcamp-ai-tech-4-cv-17",
             "project": "Final Project",
             "name": "model_name",
+            "group": dataset_version,
         },
     ),
 ]
