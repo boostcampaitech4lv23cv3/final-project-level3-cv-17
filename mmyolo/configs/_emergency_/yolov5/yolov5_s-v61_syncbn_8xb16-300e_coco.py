@@ -274,6 +274,8 @@ val_evaluator = dict(
     proposal_nums=(100, 1, 10),
     ann_file=data_root + _base_.val_ann_file,
     metric="bbox",
+    classwise=True,
+    prefix=_base_.dataset_prefix
 )
 test_evaluator = val_evaluator
 
