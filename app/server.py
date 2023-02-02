@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+import os
 from pathlib import Path
 from typing import List
 
@@ -134,7 +135,7 @@ def _inference_video(model_info: ModelInfo, video_filepath: FilePath) -> FilePat
     visualizer = VISUALIZERS.build(model.cfg.visualizer)
     visualizer.dataset_meta = model.dataset_meta
     video_reader = mmcv.VideoReader(str(video_filepath))
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    fourcc = cv2.VideoWriter_fourcc(*"MP4V")
     out_filepath = video_filepath.parent / (f"inferenced_{video_filepath.name}")
     video_writer = cv2.VideoWriter(
         str(out_filepath),
@@ -155,7 +156,13 @@ def _inference_video(model_info: ModelInfo, video_filepath: FilePath) -> FilePat
         frame = visualizer.get_image()
         video_writer.write(frame)
     video_writer.release()
-    return out_filepath
+
+    new_filename = (
+        f'{video_filepath.stem}_inferenced{video_filepath.suffix}'
+    )
+    h264_filepath = video_filepath.with_name(new_filename)
+    os.system(f"/url/bin/ffmpeg -i {out_filepath} -vcodec libx264 {h264_filepath}")
+    return h264_filepath
 
 
 class InferenceBody(BaseModel):
