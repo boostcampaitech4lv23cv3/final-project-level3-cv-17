@@ -20,6 +20,7 @@ model:
     # config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolox/yolox_l_8xb8-300e_coco.py
     config: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolox_l_8xb8-300e_coco/yolox_l_8xb8-300e_coco.py
     pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolox_l_8xb8-300e_coco/epoch_300.pth
+inferenced: _inferenced
 image:
   directory: /opt/ml/input/image/
   format:

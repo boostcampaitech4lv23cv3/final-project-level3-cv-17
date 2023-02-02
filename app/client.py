@@ -60,6 +60,21 @@ def inference(model_name: str, media_filepath: str) -> str:
         st.session_state["inferenced"] = output_filepath
 
 
+def get_inferenced_media(media_filepath: str) -> str:
+    log.info(f"inference(media_filepath={media_filepath!r})")
+    r = httpx.get(
+        BASE_URL + "/inference",
+        params={"filepath": media_filepath}
+    )
+
+    log.info(f"inference: r.json() = {r.json()!r}")
+
+    if r.status_code == 200:
+        output_filepath = r.json()
+        log.info(f"inference: output_filepath = {output_filepath!r}")
+        st.session_state["inferenced"] = output_filepath
+
+
 def read_image(image_path: str) -> bytes:
     log.info(f"read_image(image_path={image_path!r})")
     with open(image_path, "rb") as f:
@@ -97,8 +112,8 @@ def main():
 
             st.button(
                 "inference",
-                on_click=inference,
-                kwargs={"model_name": model_name, "media_filepath": video_path},
+                on_click=get_inferenced_media,
+                kwargs={"media_filepath": video_path},
             )
 
     if st.session_state["inferenced"] is not None:
