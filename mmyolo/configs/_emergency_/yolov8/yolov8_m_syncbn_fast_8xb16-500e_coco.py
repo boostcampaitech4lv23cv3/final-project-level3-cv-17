@@ -1,5 +1,7 @@
 _base_ = './yolov8_s_syncbn_fast_8xb16-500e_coco.py'
 
+load_from = 'https://download.openmmlab.com/mmyolo/v0/yolov8/yolov8_m_syncbn_fast_8xb16-500e_coco/yolov8_m_syncbn_fast_8xb16-500e_coco_20230115_192200-c22e560a.pth'
+
 deepen_factor = 0.67
 widen_factor = 0.75
 last_stage_out_channels = 768

@@ -1,5 +1,7 @@
 _base_ = './yolov6_s_syncbn_fast_8xb32-400e_coco.py'
 
+load_from = 'https://download.openmmlab.com/mmyolo/v0/yolov6/yolov6_s_syncbn_fast_8xb32-400e_coco/yolov6_s_syncbn_fast_8xb32-400e_coco_20221102_203035-932e1d91.pth'
+
 max_epochs = 300
 num_last_epochs = 15
 

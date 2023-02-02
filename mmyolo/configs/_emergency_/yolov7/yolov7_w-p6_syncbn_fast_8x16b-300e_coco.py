@@ -1,5 +1,7 @@
 _base_ = "./yolov7_l_syncbn_fast_8x16b-300e_coco.py"
 
+load_from = 'https://download.openmmlab.com/mmyolo/v0/yolov7/yolov7_w-p6_syncbn_fast_8x16b-300e_coco/yolov7_w-p6_syncbn_fast_8x16b-300e_coco_20221123_053031-a68ef9d2.pth'
+
 img_scale = (1280, 1280)  # height, width
 num_classes = _base_.num_classes
 # only on Val

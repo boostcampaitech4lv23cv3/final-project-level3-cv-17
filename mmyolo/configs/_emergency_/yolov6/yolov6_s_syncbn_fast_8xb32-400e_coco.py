@@ -1,5 +1,7 @@
 _base_ = "../_base_/default_runtime.py"
 
+load_from = 'https://download.openmmlab.com/mmyolo/v0/yolov6/yolov6_s_syncbn_fast_8xb32-400e_coco/yolov6_s_syncbn_fast_8xb32-400e_coco_20221102_203035-932e1d91.pth'
+
 # dataset settings
 data_root = _base_.data_root
 dataset_type = "YOLOv5CocoDataset"

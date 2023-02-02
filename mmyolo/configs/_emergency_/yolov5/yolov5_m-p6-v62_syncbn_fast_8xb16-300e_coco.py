@@ -1,5 +1,7 @@
 _base_ = './yolov5_s-p6-v62_syncbn_fast_8xb16-300e_coco.py'
 
+load_from = 'https://download.openmmlab.com/mmyolo/v0/yolov5/yolov5_m-p6-v62_syncbn_fast_8xb16-300e_coco/yolov5_m-p6-v62_syncbn_fast_8xb16-300e_coco_20221027_230453-49564d58.pth'
+
 deepen_factor = 0.67
 widen_factor = 0.75
 lr_factor = 0.1  # lrf=0.1
