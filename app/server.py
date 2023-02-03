@@ -1,3 +1,4 @@
+# python -m app.server 
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -18,12 +19,15 @@ from mmyolo.utils.misc import get_file_list
 
 from .config import read_config
 
+from .routes.user import user
+
 logging.basicConfig(
     level="NOTSET", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()]
 )
 log = logging.getLogger("rich")
 
 app = FastAPI()
+app.include_router(user)            # user route 설정
 
 
 class ModelInfo(BaseModel):
@@ -35,6 +39,11 @@ class ModelInfo(BaseModel):
 def _get_models() -> List[ModelInfo]:
     config = read_config()
     return [ModelInfo(**m) for m in config["model"]]
+
+@app.get("/")
+def get_index():
+    return {'sixsenth backend server'}
+    
 
 
 @app.get("/config")
