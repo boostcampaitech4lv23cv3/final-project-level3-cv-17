@@ -1,25 +1,17 @@
 model:
   # NOTE: 아래 명시된 config와 pth 경로 중 하나의 파일이라도 없을 경우 에러가 발생한다.
-  - name: yolov5_l-p6-v62_syncbn_fast_8xb16-300e_coco
-    # config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolov5/yolov5_l-p6-v62_syncbn_fast_8xb16-300e_coco.py
-    config: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov5_l-p6-v62_syncbn_fast_8xb16-300e_coco/yolov5_l-p6-v62_syncbn_fast_8xb16-300e_coco.py
-    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov5_l-p6-v62_syncbn_fast_8xb16-300e_coco/epoch_300.pth
-  - name: yolov6_l_syncbn_fast_8xb32-300e_coco
-    # config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolov6/yolov6_l_syncbn_fast_8xb32-300e_coco.py
-    config: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov6_l_syncbn_fast_8xb32-300e_coco/yolov6_l_syncbn_fast_8xb32-300e_coco.py
-    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov6_l_syncbn_fast_8xb32-300e_coco/epoch_300.pth
-  - name: yolov7_l_syncbn_fast_8x16b-300e_coco
-    # config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolov7/yolov7_l_syncbn_fast_8x16b-300e_coco.py
-    config: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov7_l_syncbn_fast_8x16b-300e_coco/yolov7_l_syncbn_fast_8x16b-300e_coco.py
-    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov7_l_syncbn_fast_8x16b-300e_coco/epoch_300.pth
-  - name: yolov8_l_syncbn_fast_8xb16-500e_coco
-    # config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolov8/yolov8_l_syncbn_fast_8xb16-500e_coco.py
-    config: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_l_syncbn_fast_8xb16-500e_coco/yolov8_l_syncbn_fast_8xb16-500e_coco.py
-    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_l_syncbn_fast_8xb16-500e_coco/epoch_500.pth
-  - name: yolox_l_8xb8-300e_coco
-    # config: /opt/ml/final-project-level3-cv-17/mmyolo/configs/_emergency_/yolox/yolox_l_8xb8-300e_coco.py
-    config: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolox_l_8xb8-300e_coco/yolox_l_8xb8-300e_coco.py
-    pth: /opt/ml/final-project-level3-cv-17/mmyolo/work_dirs/yolox_l_8xb8-300e_coco/epoch_300.pth
+  - name: yolov5_m-p6
+    config: /opt/ml/input/final-project-level3-cv-17/mmyolo/work_dirs/yolov5_m-p6-v62_syncbn_fast_8xb16-300e_coco/yolov5_m-p6-v62_syncbn_fast_8xb16-300e_coco.py
+    pth: /opt/ml/input/final-project-level3-cv-17/mmyolo/work_dirs/yolov5_m-p6-v62_syncbn_fast_8xb16-300e_coco/best_ver4/ambulance_precision_epoch_90.pth
+
+  - name: yolov8_l
+    config: /opt/ml/input/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_l_syncbn_fast_8xb16-500e_coco/yolov8_l_syncbn_fast_8xb16-500e_coco.py
+    pth: /opt/ml/input/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_l_syncbn_fast_8xb16-500e_coco/best_coco/bbox_mAP_epoch_300.pth
+
+  - name: yolov8_x
+    config: /opt/ml/input/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_x_syncbn_fast_8xb16-500e_coco/yolov8_x_syncbn_fast_8xb16-500e_coco.py
+    pth: /opt/ml/input/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_x_syncbn_fast_8xb16-500e_coco/last_checkpoint
+
 image:
   directory: /opt/ml/input/image/
   format:
@@ -30,6 +22,16 @@ video:
   format:
     - .mp4
     - .mkv
+
+image_input_path:
+  path: /opt/ml/input/database/Images/Input
+
+image_out_path:
+  path: /opt/ml/input/database/Images/Output
+
+
+
+
 server:
   host: 0.0.0.0
   port: 30001
