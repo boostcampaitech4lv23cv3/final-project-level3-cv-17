@@ -16,11 +16,11 @@ def get_name(name : str, password: str):
     return conn.execute(users.select().where(users.c.name == name and users.c.password == password)).first()
 # select
 
-#@user.post('/')
-#def create_user(user: User):
-#   conn.execute(users.insert().values(name=user.name,
-#                email=user.email, password=user.password))
-#   return conn.execute(users.select()).fetchall()
+@user.post('/')
+def create_user(user: User):
+   conn.execute(users.insert().values(name=user.name,
+                email=user.email, password=user.password))
+   return conn.execute(users.select()).fetchall()
 # create
 
 

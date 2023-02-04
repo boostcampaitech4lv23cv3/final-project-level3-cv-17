@@ -7,6 +7,7 @@ import httpx
 from uuid import UUID, uuid4
 
 
+
 log = logging.getLogger(__file__)
 
 st.set_page_config(layout="wide")
@@ -21,13 +22,13 @@ def get_models() -> dict:
     return [model["name"] for model in models]
 
 def session_init():
-    
     if "inferenced" not in st.session_state:
         st.session_state["inferenced"] = None
         
 def inference(model_name: str, media_filepath: str) -> str:
     log.info(f"inference(model_name={model_name!r}, media_filepath={media_filepath!r})")
     
+    # 현재 페이지 상단에 spinner가 뜬다.
     with st.spinner("wait!!!"):
         r = httpx.post(
             BASE_URL + "/inference",
@@ -41,8 +42,20 @@ def inference(model_name: str, media_filepath: str) -> str:
         log.info(f"inference: output_filepath = {output_filepath!r}")
         st.session_state["inferenced"] = output_filepath
         
-
+def mysql_image_insert(id: str, input_path: str, output_path: str):
+    
+    r = httpx.post(BASE_URL+ "/img/insert",
+                   json={"id": id, "input_path": input_path, "output_path": output_path},
+                   timeout=None
+                   )
+    if r.status_code == 200:
+        log.info("mysql data save success")
+    else:
+        log.error("mysql data save fail")
         
+        
+        
+    
     
 def main():
     st.title("This is Image Page")
@@ -76,34 +89,10 @@ def main():
                       kwargs={"model_name": model_name, "media_filepath": image_input_path},
                       )
         with col2:
-          
             if st.session_state["inferenced"] is not None:
                 st.image(st.session_state["inferenced"], caption='Infenece Image')
+                mysql_image_insert(name, image_input_path, st.session_state["inferenced"])
         
-        
-        
-                
-            
-        
-    
-    
-    
-    
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == '__main__':
     main()

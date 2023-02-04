@@ -19,7 +19,7 @@ from mmyolo.utils.misc import get_file_list
 
 from .config import read_config
 
-from .routes.user import user
+from .routes.img import img as r_img
 
 logging.basicConfig(
     level="NOTSET", format="%(message)s", datefmt="[%X]", handlers=[RichHandler()]
@@ -27,7 +27,8 @@ logging.basicConfig(
 log = logging.getLogger("rich")
 
 app = FastAPI()
-app.include_router(user)            # user route 설정
+app.include_router(r_img)            # img route 설정
+
 
 
 class ModelInfo(BaseModel):
