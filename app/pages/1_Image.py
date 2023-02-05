@@ -16,14 +16,24 @@ CONFIG = read_config()
 BASE_URL = f"http://localhost:{CONFIG['server']['port']}"
 
 def get_models() -> dict:
-    log.info("get_models()")
-    r = httpx.get(BASE_URL + "/models")
-    models = r.json()
+    if st.session_state["models"] is None:
+        log.info("get_models()")
+        r = httpx.get(BASE_URL + "/models")
+        models = r.json()
+        st.session_state["models"] = models
+    else:
+        log.info("get_models22()")
+        models = st.session_state["models"]
     return [model["name"] for model in models]
+        
+    
 
 def session_init():
     if "inferenced" not in st.session_state:
         st.session_state["inferenced"] = None
+    if "models" not in st.session_state:
+        st.session_state["models"] = None
+        
         
 def inference(model_name: str, media_filepath: str) -> str:
     log.info(f"inference(model_name={model_name!r}, media_filepath={media_filepath!r})")
@@ -91,7 +101,7 @@ def main():
         with col2:
             if st.session_state["inferenced"] is not None:
                 st.image(st.session_state["inferenced"], caption='Infenece Image')
-                mysql_image_insert(name, image_input_path, st.session_state["inferenced"])
+                #mysql_image_insert(name, image_input_path, st.session_state["inferenced"])
         
 
 if __name__ == '__main__':
