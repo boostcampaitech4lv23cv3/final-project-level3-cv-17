@@ -109,6 +109,7 @@ def _get_visualizer_name(filepath: FilePath) -> str:
 
 def _inference_image(model_info: ModelInfo, image_filepath: FilePath) -> FilePath:
     register_all_modules()
+    config = read_config()
     model = init_detector(model_info.config, str(model_info.pth), device="cuda:0")
     model.cfg.visualizer["name"] = _get_visualizer_name(image_filepath)
     visualizer = VISUALIZERS.build(model.cfg.visualizer)
@@ -118,7 +119,8 @@ def _inference_image(model_info: ModelInfo, image_filepath: FilePath) -> FilePat
     result = inference_detector(model, file)
     img = mmcv.imread(file)
     img = mmcv.imconvert(img, "bgr", "rgb")
-    out_filepath = image_filepath.parent / (f"inferenced_{image_filepath.name}")
+    #out_filepath = image_filepath.parent / (f"inferenced_{image_filepath.name}")
+    out_filepath = f'{config["image_out_path"]["path"]}/inferenced_{image_filepath.name}' 
     visualizer.add_datasample(
         file,
         img,
