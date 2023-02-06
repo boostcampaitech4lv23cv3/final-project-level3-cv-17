@@ -43,7 +43,7 @@ def inference(model_name: str, media_filepath: str) -> str:
     log.info(f"inference(model_name={model_name!r}, media_filepath={media_filepath!r})")
     
     # 현재 페이지 상단에 spinner가 뜬다.
-    with st.spinner("wait!!!"):
+    with st.spinner("Predicting results. Please wait a moment!"):
         r = httpx.post(
             BASE_URL + "/inference",
             json={"model_name": model_name, "media_filepath": media_filepath},

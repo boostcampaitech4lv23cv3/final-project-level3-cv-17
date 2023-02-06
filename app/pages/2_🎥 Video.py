@@ -78,7 +78,7 @@ def get_inferenced_media(media_filepath: str) -> str:
     if r.status_code == 200:
         output_filepath = r.json()
         log.info(f"inference: output_filepath = {output_filepath!r}")
-        st.session_state["inferenced"] = output_filepath
+        st.session_state["inferenced_video"] = output_filepath
 
 def read_image(image_path: str) -> bytes:
     log.info(f"read_image(image_path={image_path!r})")
@@ -92,8 +92,8 @@ def read_video(video_path: str) -> bytes:
     
 def session_init():
     print('session init')
-    if "inferenced" not in st.session_state:
-        st.session_state["inferenced"] = None
+    if "inferenced_video" not in st.session_state:
+        st.session_state["inferenced_video"] = None
     if "models" not in st.session_state:
         st.session_state["models"] = None
     if "videos" not in st.session_state:
@@ -134,8 +134,8 @@ def main():
                 kwargs={"media_filepath": video_path},
             )
     with col2:
-        if st.session_state["inferenced"] is not None:
-            output_video = read_video(st.session_state["inferenced"])
+        if st.session_state["inferenced_video"] is not None:
+            output_video = read_video(st.session_state["inferenced_video"])
             st.video(output_video)
     
 if __name__ == "__main__":
