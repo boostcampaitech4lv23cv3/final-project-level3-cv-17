@@ -4,7 +4,7 @@ import streamlit as st
 def intro():
     import streamlit as st
 
-    st.write("# Welcome to Streamlit! 👋")
+    st.write("# Welcome to Sixth Sense Page! 👋")
     st.sidebar.success("Select a demo Above")
 
     st.markdown(
@@ -33,11 +33,6 @@ def intro():
     
 page_names_to_funcs = {
     "frontend": intro,
-    #"Plotting Demo": plotting_demo,
-    #"Mapping Demo": mapping_demo,
-    #"DataFrame Demo": data_frame_demo
 }
 
-#demo_name = st.sidebar.selectbox("Choose a demo", page_names_to_funcs.keys())
-#page_names_to_funcs[demo_name]()
 page_names_to_funcs["frontend"]()
