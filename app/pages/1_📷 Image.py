@@ -5,6 +5,8 @@ from PIL import Image
 import io
 import httpx
 from uuid import UUID, uuid4
+import datetime as dt
+
 
 
 
@@ -89,7 +91,7 @@ def main():
             
             if st.session_state["upload_file"] is None:
                 # 이미지 서버에 저장
-                name = str(uuid4())
+                name = dt.datetime.today().strftime("%Y%m%d") + '_' + str(uuid4())          # 날짜_uuid4
                 image_input_path = f'{CONFIG["image_input_path"]["path"]}/{name}.jpg'
                 image.save(image_input_path, 'JPEG')
                 

@@ -40,6 +40,10 @@ def _get_models() -> List[ModelInfo]:
     config = read_config()
     return [ModelInfo(**m) for m in config["model"]]
 
+@app.get("/")
+def root():
+    return {"Sixth Sense Fastapi Webserver"}
+
 @app.get("/config")
 def get_config() -> dict:
     log.info("GET /config")
