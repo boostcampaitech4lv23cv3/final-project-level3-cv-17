@@ -30,7 +30,7 @@ video:
 image_input_path:
   path: /opt/ml/input/database/Images/Input
 
-image_out_path:
+image_output_path:
   path: /opt/ml/input/database/Images/Output
 
 server:

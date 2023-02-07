@@ -17,6 +17,18 @@ st.set_page_config(layout="wide")
 CONFIG = read_config()
 BASE_URL = f"http://localhost:{CONFIG['server']['port']}"
 
+def make_database_dir():
+    import os
+    _input_path = CONFIG["image_input_path"]["path"]
+    _output_path = CONFIG["image_output_path"]["path"]
+    
+    def _mkdir(path):
+        if not os.path.exists(path):
+            os.makedirs(path)
+            
+    _mkdir(_input_path)
+    _mkdir(_output_path)
+    
 def get_models() -> dict:
     if st.session_state["models"] is None:
         log.info("get_models()")
@@ -73,6 +85,7 @@ def main():
     st.title("Sixth Sense Image Demo Page")
     
     session_init()              # session 초기화
+    make_database_dir()
     text_spinner_placeholder = st.empty()
     
     models = get_models()

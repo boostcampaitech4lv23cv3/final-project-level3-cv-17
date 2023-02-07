@@ -124,7 +124,7 @@ def _inference_image(model_info: ModelInfo, image_filepath: FilePath) -> FilePat
     img = mmcv.imread(file)
     img = mmcv.imconvert(img, "bgr", "rgb")
     #out_filepath = image_filepath.parent / (f"inferenced_{image_filepath.name}")
-    out_filepath = f'{config["image_out_path"]["path"]}/inferenced_{image_filepath.name}' 
+    out_filepath = f'{config["image_output_path"]["path"]}/inferenced_{image_filepath.name}' 
     visualizer.add_datasample(
         file,
         img,
