@@ -52,6 +52,8 @@ def session_init():
         st.session_state["name"] = None
     if "image_input_path" not in st.session_state:
         st.session_state["image_input_path"] = None
+    if "gcs_url" not in st.session_state:
+        st.session_state["gcs_url"] = None
         
 def inference(model_name: str, media_filepath: str) -> str:
     log.info(f"inference(model_name={model_name!r}, media_filepath={media_filepath!r})")
@@ -69,10 +71,10 @@ def inference(model_name: str, media_filepath: str) -> str:
         log.info(f"inference: output_filepath = {output_filepath!r}")
         st.session_state["inferenced"] = output_filepath
         
-def mysql_image_insert(id: str, input_path: str, output_path: str):
+def mysql_image_insert(id: str, input_path: str, output_path: str, gcs_url: str):
     
     r = httpx.post(BASE_URL+ "/img/insert",
-                   json={"id": id, "input_path": input_path, "output_path": output_path},
+                   json={"id": id, "input_path": input_path, "output_path": output_path, "gcs_url": gcs_url},
                    timeout=None)
     
     if r.status_code == 200:
@@ -83,6 +85,10 @@ def mysql_image_insert(id: str, input_path: str, output_path: str):
         
 def main():
     st.title("Sixth Sense Image Demo Page")
+    
+    #gcs_path = 'https://storage.cloud.google.com/awesome-gcp12/0b9ea207-9f0c-4bab-8004-321c4a25ba36.jpg'
+    gcs_path = 'https://storage.cloud.google.com/'
+    bucket_name = 'awesome-gcp12'
     
     session_init()              # session 초기화
     make_database_dir()
@@ -107,10 +113,13 @@ def main():
                 name = dt.datetime.today().strftime("%Y%m%d") + '_' + str(uuid4())          # 날짜_uuid4
                 image_input_path = f'{CONFIG["image_input_path"]["path"]}/{name}.jpg'
                 image.save(image_input_path, 'JPEG')
+                gcs_url = f'{gcs_path+bucket_name}/{name}.jpg'
+                
                 
                 st.session_state["upload_file"] = True
                 st.session_state["name"] = name
                 st.session_state["image_input_path"] = image_input_path
+                st.session_state["gcs_url"] = gcs_url
                 
                 st.button("Inference",
                       on_click=inference,
@@ -118,12 +127,14 @@ def main():
         with col2:
             if st.session_state["inferenced"] is not None:
                 st.image(st.session_state["inferenced"], caption='Infenece Image')
-                mysql_image_insert(st.session_state["name"], st.session_state["image_input_path"], st.session_state["inferenced"])
+                mysql_image_insert(st.session_state["name"], st.session_state["image_input_path"], st.session_state["inferenced"], st.session_state["gcs_url"])
     else:
         del st.session_state["upload_file"]
         del st.session_state["inferenced"]
         del st.session_state["name"]
         del st.session_state["image_input_path"]
+        del st.session_state["gcs_url"]
+        
     
         
         

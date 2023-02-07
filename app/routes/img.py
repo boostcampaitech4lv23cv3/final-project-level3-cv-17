@@ -11,7 +11,8 @@ def insert_table(p_img: Img):
     conn.execute(imgs.insert().values(
         id=p_img.id,
         input_path=p_img.input_path,
-        output_path=p_img.output_path
+        output_path=p_img.output_path,
+        gcs_url=p_img.gcs_url
     ))
     
 # select table
