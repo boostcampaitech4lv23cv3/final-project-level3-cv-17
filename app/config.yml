@@ -10,7 +10,7 @@ model:
 
   - name: yolov8_x
     config: /opt/ml/input/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_x_syncbn_fast_8xb16-500e_coco/yolov8_x_syncbn_fast_8xb16-500e_coco.py
-    pth: /opt/ml/input/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_x_syncbn_fast_8xb16-500e_coco/best_ver4/ambulance_precision_epoch_407.pth
+    pth: /opt/ml/input/final-project-level3-cv-17/mmyolo/work_dirs/yolov8_x_syncbn_fast_8xb16-500e_coco/best_ver4/ambulance_precision_epoch_499.pth
 
 inferenced: _inferenced
 
