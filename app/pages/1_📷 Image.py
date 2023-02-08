@@ -9,7 +9,6 @@ import datetime as dt
 
 
 
-
 log = logging.getLogger(__file__)
 
 st.set_page_config(layout="wide")
@@ -36,7 +35,7 @@ def get_models() -> dict:
         models = r.json()
         st.session_state["models"] = models
     else:
-        log.info("get_models22()")
+        #log.info("get_models22()")
         models = st.session_state["models"]
     return [model["name"] for model in models]
 
@@ -52,8 +51,6 @@ def session_init():
         st.session_state["name"] = None
     if "image_input_path" not in st.session_state:
         st.session_state["image_input_path"] = None
-    if "gcs_url" not in st.session_state:
-        st.session_state["gcs_url"] = None
         
 def inference(model_name: str, media_filepath: str) -> str:
     log.info(f"inference(model_name={model_name!r}, media_filepath={media_filepath!r})")
@@ -71,28 +68,30 @@ def inference(model_name: str, media_filepath: str) -> str:
         log.info(f"inference: output_filepath = {output_filepath!r}")
         st.session_state["inferenced"] = output_filepath
         
-def mysql_image_insert(id: str, input_path: str, output_path: str, gcs_url: str):
-    
+def mysql_image_insert(id: str, input_path: str, output_path: str):
     r = httpx.post(BASE_URL+ "/img/insert",
-                   json={"id": id, "input_path": input_path, "output_path": output_path, "gcs_url": gcs_url},
+                   json={"id": id, "input_path": input_path, "output_path": output_path},
                    timeout=None)
-    
     if r.status_code == 200:
         log.info("mysql data save success")
     else:
         log.error("mysql data save fail")
         
-        
+def insert_gcs(path: str, name: str, flag: str):
+    r = httpx.post(BASE_URL+"/img/gcs",
+                   json={"path": path, "name": name},
+                   timeout=None)
+    if r.status_code == 200:
+        log.info(f"gcs {flag} image save success")
+    else:
+        log.info(f"gcs {flag} image save success")
+            
 def main():
     st.title("Sixth Sense Image Demo Page")
     
-    #gcs_path = 'https://storage.cloud.google.com/awesome-gcp12/0b9ea207-9f0c-4bab-8004-321c4a25ba36.jpg'
-    gcs_path = 'https://storage.cloud.google.com/'
-    bucket_name = 'awesome-gcp12'
-    
-    session_init()              # session 초기화
+    # session 초기화
+    session_init()             
     make_database_dir()
-    text_spinner_placeholder = st.empty()
     
     models = get_models()
     model_name = st.selectbox("Model List", models)
@@ -109,31 +108,37 @@ def main():
             st.image(image, caption='Uploaded Image')
             
             if st.session_state["upload_file"] is None:
-                # 이미지 서버에 저장
+                # input 이미지 서버에 저장
                 name = dt.datetime.today().strftime("%Y%m%d") + '_' + str(uuid4())          # 날짜_uuid4
                 image_input_path = f'{CONFIG["image_input_path"]["path"]}/{name}.jpg'
                 image.save(image_input_path, 'JPEG')
-                gcs_url = f'{gcs_path+bucket_name}/{name}.jpg'
-                
-                
-                st.session_state["upload_file"] = True
-                st.session_state["name"] = name
-                st.session_state["image_input_path"] = image_input_path
-                st.session_state["gcs_url"] = gcs_url
                 
                 st.button("Inference",
                       on_click=inference,
                       kwargs={"model_name": model_name, "media_filepath": image_input_path})
+                
+                # input 이미지 gcs에 저장
+                insert_gcs(image_input_path, f'{name}.jpg', 'input')
+                
+                st.session_state["upload_file"] = True
+                st.session_state["name"] = name
+                st.session_state["image_input_path"] = image_input_path
+                
         with col2:
             if st.session_state["inferenced"] is not None:
                 st.image(st.session_state["inferenced"], caption='Infenece Image')
-                mysql_image_insert(st.session_state["name"], st.session_state["image_input_path"], st.session_state["inferenced"], st.session_state["gcs_url"])
+                # output 이미지 gcs에 저장
+                insert_gcs(st.session_state["inferenced"], f'inferenced_{st.session_state["name"]}.jpg', 'output')
+                # mysql 이미지 data 저장
+                mysql_image_insert(st.session_state["name"], f'{CONFIG["google"]["path"]}{CONFIG["google"]["bucket"]}/{st.session_state["name"]}.jpg',
+                                   f'{CONFIG["google"]["path"]}{CONFIG["google"]["bucket"]}/inferenced_{st.session_state["name"]}.jpg')
+                
     else:
         del st.session_state["upload_file"]
         del st.session_state["inferenced"]
         del st.session_state["name"]
         del st.session_state["image_input_path"]
-        del st.session_state["gcs_url"]
+        
         
     
         

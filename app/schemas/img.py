@@ -5,4 +5,8 @@ class Img(BaseModel):
     id: str
     input_path: str
     output_path: str
-    gcs_url: str
+    
+
+class GCS(BaseModel):
+    path: str               
+    name: str               
