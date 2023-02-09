@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+import os
 from pathlib import Path
 from typing import List
 
@@ -57,24 +58,29 @@ def get_model_by_name(model_name: str) -> ModelInfo:
             return model
     raise HTTPException(status_code=404, detail="모델을 찾을 수 없습니다")
 
+def is_inferenced_media(filepath: Path) -> bool:
+    config = read_config()
+    return config['inferenced'] in filepath.stem
 
-def _get_filepaths(key: str) -> List[FilePath]:
+def _get_filepaths(key: str, inferenced: bool) -> List[FilePath]:
     config = read_config()
     directory = Path(config[key]["directory"])
     formats = config[key]["format"]
-    return [_path for format in formats for _path in directory.glob(f"**/*{format}")]
-
+    filepaths = [_path for format in formats for _path in directory.glob(f"**/*{format}")]
+    if inferenced:
+        return [_path for _path in filepaths if is_inferenced_media(_path)]
+    return [_path for _path in filepaths if not is_inferenced_media(_path)]
 
 @app.get("/images")
 def get_images() -> List[FilePath]:
     log.info("GET /images")
-    return _get_filepaths("image")
+    return _get_filepaths("image", inferenced=False)
 
 
 @app.get("/videos")
 def get_videos() -> List[FilePath]:
     log.info("GET /images")
-    return _get_filepaths("video")
+    return _get_filepaths("video", inferenced=False)
 
 
 def _is_image_file(filepath: FilePath) -> bool:
@@ -134,7 +140,7 @@ def _inference_video(model_info: ModelInfo, video_filepath: FilePath) -> FilePat
     visualizer = VISUALIZERS.build(model.cfg.visualizer)
     visualizer.dataset_meta = model.dataset_meta
     video_reader = mmcv.VideoReader(str(video_filepath))
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    fourcc = cv2.VideoWriter_fourcc(*"MP4V")
     out_filepath = video_filepath.parent / (f"inferenced_{video_filepath.name}")
     video_writer = cv2.VideoWriter(
         str(out_filepath),
@@ -155,7 +161,13 @@ def _inference_video(model_info: ModelInfo, video_filepath: FilePath) -> FilePat
         frame = visualizer.get_image()
         video_writer.write(frame)
     video_writer.release()
-    return out_filepath
+
+    new_filename = (
+        f'{video_filepath.stem}_inferenced{video_filepath.suffix}'
+    )
+    h264_filepath = video_filepath.with_name(new_filename)
+    os.system(f"/url/bin/ffmpeg -i {out_filepath} -vcodec libx264 {h264_filepath}")
+    return h264_filepath
 
 
 class InferenceBody(BaseModel):
@@ -175,6 +187,14 @@ async def inference(body: InferenceBody) -> FilePath:
         return _inference_image(model, body.media_filepath)
 
     return _inference_video(model, body.media_filepath)
+
+
+@app.get("/inference")
+def get_inferenced_media(filepath: FilePath) -> FilePath:
+    log.info("GET /inference")
+    config = read_config()
+    inferenced_filename = filepath.stem + config['inferenced'] + filepath.suffix
+    return filepath.with_name(inferenced_filename)
 
 
 if __name__ == "__main__":
