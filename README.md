@@ -29,7 +29,7 @@
 
 ## 🧑‍💻 Contributions
 
-- 서장원 : Project Manager, Data Prepare, Service Develop
+- 서장원 : Project Manager, Prepare Dataset, Service Develop, Experiments
 - 박선규 : Experiments, Service Develop, Modeling
 - 박세준 : Data Annotation, Experiments, Modeling, EDA
 - 장국빈 : Data Pipeline, Data Cleaning, Experiments
