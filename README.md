@@ -51,8 +51,8 @@
 <br>
 
 ## 💾 DataSet
-1. [주행 차량 관점의 특수 차량 형상 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=553)
-2. [자율주행 및 ADAS AI인지모델 학습용 데이터](https://aihub.or.kr/aihubdata/data/view.docurrMenu=115&topMenu=100&dataSetSn=461)
+1. [주행 차량 관점의 특수 차량 형상 데이터 (AIHub)](https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=553)
+2. [자율주행 및 ADAS AI인지모델 학습용 데이터 (AIHub)](https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=461)
 
 ## 🧹 Data Cleaning
 <img width="100%" src="https://user-images.githubusercontent.com/66928953/217619836-092502bc-6963-42f9-b1c3-597ba8aaa117.png"/>
@@ -83,13 +83,10 @@
 
 <img width="100%" src="https://user-images.githubusercontent.com/66928953/217620817-423da28d-bf37-4103-9c42-f776c7a91995.png"/>
 
-Streamlit : Frontend 제작
-
-FastAPI : Backend 제작
-
-Google Cloud SQL (MySQL):  이미지 데이터 저장
-
-Google Cloud Storage : input/output 이미지 저장
+- Streamlit : Frontend 제작
+- FastAPI : Backend 제작
+- Google Cloud SQL (MySQL):  이미지 데이터(업로드 시각, 원본 이미지 URL, 추론된 이미지 URL) 저장
+- Google Cloud Storage : 원본 이미지 파일과 추론된 이미지 파일을 저장
 
 
 ## 📹Demo
