@@ -6,14 +6,14 @@ dataset_version = "ver4"
 
 if dataset_version == "ver3":
     num_classes = 4
-    classes=("ambulance", "fire truck", "ladder truck", "police car")
-    train_ann_file = "labels/*.json"
-    val_ann_file = "labels/*.json"
+    classes = ("ambulance", "fire truck", "ladder truck", "police car")
+    train_ann_file = "labels/train_ver3.json"
+    val_ann_file = "labels/val_ver3.json"
 elif dataset_version == "ver4":
     num_classes = 3
-    classes=("ambulance", "fire truck", "police car")
-    train_ann_file = "labels/*.json"
-    val_ann_file = "labels/*.json"
+    classes = ("ambulance", "fire truck", "police car")
+    train_ann_file = "labels/train_ver4.json"
+    val_ann_file = "labels/val_ver4.json"
 
 metainfo = dict(classes=classes)
 dataset_prefix = dataset_version
@@ -43,8 +43,10 @@ vis_backends = [
         init_kwargs={
             "entity": "boostcamp-ai-tech-4-cv-17",
             "project": "Final Project",
+            "save_code": True,
             "name": "model_name",
             "group": dataset_version,
+            "tags": [],
         },
     ),
 ]
