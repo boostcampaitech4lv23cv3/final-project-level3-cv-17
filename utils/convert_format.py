@@ -56,6 +56,7 @@ After File Structure:
     ┣━━ 📝 total.json (10.1 MB)
     ┗━━ 📝 total_pretty.json (17.4 MB)
 """
+
 import copy
 import json
 from pathlib import Path

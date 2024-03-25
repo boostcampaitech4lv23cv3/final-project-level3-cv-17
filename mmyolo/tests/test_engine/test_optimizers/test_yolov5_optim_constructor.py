@@ -30,52 +30,59 @@ class TestYOLOv5OptimizerConstructor(TestCase):
         self.base_lr = 0.01
         self.weight_decay = 0.0001
         self.optim_wrapper_cfg = dict(
-            type='OptimWrapper',
+            type="OptimWrapper",
             optimizer=dict(
-                type='SGD',
+                type="SGD",
                 lr=self.base_lr,
                 momentum=0.9,
                 weight_decay=self.weight_decay,
-                batch_size_per_gpu=16))
+                batch_size_per_gpu=16,
+            ),
+        )
 
     def test_init(self):
         YOLOv5OptimizerConstructor(copy.deepcopy(self.optim_wrapper_cfg))
         YOLOv5OptimizerConstructor(
             copy.deepcopy(self.optim_wrapper_cfg),
-            paramwise_cfg={'base_total_batch_size': 64})
+            paramwise_cfg={"base_total_batch_size": 64},
+        )
 
         # `paramwise_cfg` must include `base_total_batch_size` if not None.
         with self.assertRaises(AssertionError):
             YOLOv5OptimizerConstructor(
-                copy.deepcopy(self.optim_wrapper_cfg), paramwise_cfg={'a': 64})
+                copy.deepcopy(self.optim_wrapper_cfg), paramwise_cfg={"a": 64}
+            )
 
     def test_build(self):
         optim_wrapper = YOLOv5OptimizerConstructor(
-            copy.deepcopy(self.optim_wrapper_cfg))(
-                self.model)
+            copy.deepcopy(self.optim_wrapper_cfg)
+        )(self.model)
         # test param_groups
         assert len(optim_wrapper.optimizer.param_groups) == 3
         for i in range(3):
             param_groups_i = optim_wrapper.optimizer.param_groups[i]
-            assert param_groups_i['lr'] == self.base_lr
+            assert param_groups_i["lr"] == self.base_lr
             if i == 0:
-                assert param_groups_i['weight_decay'] == self.weight_decay
+                assert param_groups_i["weight_decay"] == self.weight_decay
             else:
-                assert param_groups_i['weight_decay'] == 0
+                assert param_groups_i["weight_decay"] == 0
 
         # test weight_decay linear scaling
         optim_wrapper_cfg = copy.deepcopy(self.optim_wrapper_cfg)
-        optim_wrapper_cfg['optimizer']['batch_size_per_gpu'] = 128
-        optim_wrapper = YOLOv5OptimizerConstructor(optim_wrapper_cfg)(
-            self.model)
-        assert optim_wrapper.optimizer.param_groups[0][
-            'weight_decay'] == self.weight_decay * 2
+        optim_wrapper_cfg["optimizer"]["batch_size_per_gpu"] = 128
+        optim_wrapper = YOLOv5OptimizerConstructor(optim_wrapper_cfg)(self.model)
+        assert (
+            optim_wrapper.optimizer.param_groups[0]["weight_decay"]
+            == self.weight_decay * 2
+        )
 
         # test without batch_size_per_gpu
         optim_wrapper_cfg = copy.deepcopy(self.optim_wrapper_cfg)
-        optim_wrapper_cfg['optimizer'].pop('batch_size_per_gpu')
+        optim_wrapper_cfg["optimizer"].pop("batch_size_per_gpu")
         optim_wrapper = dict(
-            optim_wrapper_cfg, constructor='YOLOv5OptimizerConstructor')
+            optim_wrapper_cfg, constructor="YOLOv5OptimizerConstructor"
+        )
         optim_wrapper = build_optim_wrapper(self.model, optim_wrapper)
-        assert optim_wrapper.optimizer.param_groups[0][
-            'weight_decay'] == self.weight_decay
+        assert (
+            optim_wrapper.optimizer.param_groups[0]["weight_decay"] == self.weight_decay
+        )

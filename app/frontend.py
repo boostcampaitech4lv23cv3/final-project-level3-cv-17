@@ -1,6 +1,3 @@
-import streamlit as st
-
-
 def intro():
     import streamlit as st
 
@@ -10,7 +7,7 @@ def intro():
     st.markdown(
         """
 
-        **👈 Select a demo from the left** 
+        **👈 Select a demo from the left**
 
         ### What kind of work do you want to do?
 
@@ -18,7 +15,8 @@ def intro():
         - Video
     """
     )
-    
+
+
 page_names_to_funcs = {
     "frontend": intro,
 }

@@ -15,8 +15,7 @@ from mmyolo.deploy.models.layers import efficient_nms
 from mmyolo.models.dense_heads import YOLOv5Head
 
 
-def yolov5_bbox_decoder(priors: Tensor, bbox_preds: Tensor,
-                        stride: int) -> Tensor:
+def yolov5_bbox_decoder(priors: Tensor, bbox_preds: Tensor, stride: int) -> Tensor:
     """Decode YOLOv5 bounding boxes.
 
     Args:
@@ -36,26 +35,27 @@ def yolov5_bbox_decoder(priors: Tensor, bbox_preds: Tensor,
 
     x_center_pred = (bbox_preds[..., 0] - 0.5) * 2 * stride + x_center
     y_center_pred = (bbox_preds[..., 1] - 0.5) * 2 * stride + y_center
-    w_pred = (bbox_preds[..., 2] * 2)**2 * w
-    h_pred = (bbox_preds[..., 3] * 2)**2 * h
+    w_pred = (bbox_preds[..., 2] * 2) ** 2 * w
+    h_pred = (bbox_preds[..., 3] * 2) ** 2 * h
 
-    decoded_bboxes = torch.stack(
-        [x_center_pred, y_center_pred, w_pred, h_pred], dim=-1)
+    decoded_bboxes = torch.stack([x_center_pred, y_center_pred, w_pred, h_pred], dim=-1)
 
     return decoded_bboxes
 
 
 @FUNCTION_REWRITER.register_rewriter(
-    func_name='mmyolo.models.dense_heads.yolov5_head.'
-    'YOLOv5Head.predict_by_feat')
-def yolov5_head__predict_by_feat(self,
-                                 cls_scores: List[Tensor],
-                                 bbox_preds: List[Tensor],
-                                 objectnesses: Optional[List[Tensor]] = None,
-                                 batch_img_metas: Optional[List[dict]] = None,
-                                 cfg: Optional[ConfigDict] = None,
-                                 rescale: bool = False,
-                                 with_nms: bool = True) -> Tuple[InstanceData]:
+    func_name="mmyolo.models.dense_heads.yolov5_head." "YOLOv5Head.predict_by_feat"
+)
+def yolov5_head__predict_by_feat(
+    self,
+    cls_scores: List[Tensor],
+    bbox_preds: List[Tensor],
+    objectnesses: Optional[List[Tensor]] = None,
+    batch_img_metas: Optional[List[dict]] = None,
+    cfg: Optional[ConfigDict] = None,
+    rescale: bool = False,
+    with_nms: bool = True,
+) -> Tuple[InstanceData]:
     """Transform a batch of output features extracted by the head into
     bbox results.
     Args:
@@ -87,7 +87,7 @@ def yolov5_head__predict_by_feat(self,
     ctx = FUNCTION_REWRITER.get_context()
     detector_type = type(self)
     deploy_cfg = ctx.cfg
-    use_efficientnms = deploy_cfg.get('use_efficientnms', False)
+    use_efficientnms = deploy_cfg.get("use_efficientnms", False)
     dtype = cls_scores[0].dtype
     device = cls_scores[0].device
     bbox_decoder = self.bbox_coder.decode
@@ -107,14 +107,15 @@ def yolov5_head__predict_by_feat(self,
     featmap_sizes = [cls_score.shape[2:] for cls_score in cls_scores]
 
     mlvl_priors = self.prior_generator.grid_priors(
-        featmap_sizes, dtype=dtype, device=device)
+        featmap_sizes, dtype=dtype, device=device
+    )
 
     flatten_priors = torch.cat(mlvl_priors)
 
     mlvl_strides = [
         flatten_priors.new_full(
-            (featmap_size[0] * featmap_size[1] * self.num_base_priors, ),
-            stride)
+            (featmap_size[0] * featmap_size[1] * self.num_base_priors,), stride
+        )
         for featmap_size, stride in zip(featmap_sizes, self.featmap_strides)
     ]
     flatten_stride = torch.cat(mlvl_strides)
@@ -142,29 +143,36 @@ def yolov5_head__predict_by_feat(self,
 
     scores = cls_scores
 
-    bboxes = bbox_decoder(flatten_priors[None], flatten_bbox_preds,
-                          flatten_stride)
+    bboxes = bbox_decoder(flatten_priors[None], flatten_bbox_preds, flatten_stride)
 
     if not with_nms:
         return bboxes, scores
 
     post_params = get_post_processing_params(deploy_cfg)
     max_output_boxes_per_class = post_params.max_output_boxes_per_class
-    iou_threshold = cfg.nms.get('iou_threshold', post_params.iou_threshold)
-    score_threshold = cfg.get('score_thr', post_params.score_threshold)
+    iou_threshold = cfg.nms.get("iou_threshold", post_params.iou_threshold)
+    score_threshold = cfg.get("score_thr", post_params.score_threshold)
     pre_top_k = post_params.pre_top_k
-    keep_top_k = cfg.get('max_per_img', post_params.keep_top_k)
+    keep_top_k = cfg.get("max_per_img", post_params.keep_top_k)
 
-    return nms_func(bboxes, scores, max_output_boxes_per_class, iou_threshold,
-                    score_threshold, pre_top_k, keep_top_k)
+    return nms_func(
+        bboxes,
+        scores,
+        max_output_boxes_per_class,
+        iou_threshold,
+        score_threshold,
+        pre_top_k,
+        keep_top_k,
+    )
 
 
 @FUNCTION_REWRITER.register_rewriter(
-    func_name='mmyolo.models.dense_heads.yolov5_head.'
-    'YOLOv5Head.predict',
-    backend='rknn')
-def yolov5_head__predict__rknn(self, x: Tuple[Tensor], *args,
-                               **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
+    func_name="mmyolo.models.dense_heads.yolov5_head." "YOLOv5Head.predict",
+    backend="rknn",
+)
+def yolov5_head__predict__rknn(
+    self, x: Tuple[Tensor], *args, **kwargs
+) -> Tuple[Tensor, Tensor, Tensor]:
     """Perform forward propagation of the detection head and predict detection
     results on the features of the upstream network.
 
@@ -177,11 +185,12 @@ def yolov5_head__predict__rknn(self, x: Tuple[Tensor], *args,
 
 
 @FUNCTION_REWRITER.register_rewriter(
-    func_name='mmyolo.models.dense_heads.yolov5_head.'
-    'YOLOv5HeadModule.forward',
-    backend='rknn')
+    func_name="mmyolo.models.dense_heads.yolov5_head." "YOLOv5HeadModule.forward",
+    backend="rknn",
+)
 def yolov5_head_module__forward__rknn(
-        self, x: Tensor, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
+    self, x: Tensor, *args, **kwargs
+) -> Tuple[Tensor, Tensor, Tensor]:
     """Forward feature of a single scale level."""
     out = []
     for i, feat in enumerate(x):
