@@ -31,8 +31,10 @@ class NcnnFocus(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         batch_size, c, h, w = x.shape
-        assert h % 2 == 0 and w % 2 == 0, f'focus for yolox needs even feature\
-            height and width, got {(h, w)}.'
+        assert (
+            h % 2 == 0 and w % 2 == 0
+        ), f"focus for yolox needs even feature\
+            height and width, got {(h, w)}."
 
         x = x.reshape(batch_size, c * h, 1, w)
         _b, _c, _h, _w = x.shape
@@ -61,14 +63,10 @@ class GConvFocus(nn.Module):
     def __init__(self, orin_Focus: nn.Module):
         super().__init__()
         device = next(orin_Focus.parameters()).device
-        self.weight1 = torch.tensor([[1., 0], [0, 0]]).expand(3, 1, 2,
-                                                              2).to(device)
-        self.weight2 = torch.tensor([[0, 0], [1., 0]]).expand(3, 1, 2,
-                                                              2).to(device)
-        self.weight3 = torch.tensor([[0, 1.], [0, 0]]).expand(3, 1, 2,
-                                                              2).to(device)
-        self.weight4 = torch.tensor([[0, 0], [0, 1.]]).expand(3, 1, 2,
-                                                              2).to(device)
+        self.weight1 = torch.tensor([[1.0, 0], [0, 0]]).expand(3, 1, 2, 2).to(device)
+        self.weight2 = torch.tensor([[0, 0], [1.0, 0]]).expand(3, 1, 2, 2).to(device)
+        self.weight3 = torch.tensor([[0, 1.0], [0, 0]]).expand(3, 1, 2, 2).to(device)
+        self.weight4 = torch.tensor([[0, 0], [0, 1.0]]).expand(3, 1, 2, 2).to(device)
         self.__dict__.update(orin_Focus.__dict__)
 
     def forward(self, x: Tensor) -> Tensor:

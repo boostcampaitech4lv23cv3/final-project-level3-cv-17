@@ -1,6 +1,6 @@
 _base_ = "./yolov7_l_syncbn_fast_8x16b-300e_coco.py"
 
-load_from = 'https://download.openmmlab.com/mmyolo/v0/yolov7/yolov7_tiny_syncbn_fast_8x16b-300e_coco/yolov7_tiny_syncbn_fast_8x16b-300e_coco_20221126_102719-0ee5bbdf.pth'
+load_from = "https://download.openmmlab.com/mmyolo/v0/yolov7/yolov7_tiny_syncbn_fast_8x16b-300e_coco/yolov7_tiny_syncbn_fast_8x16b-300e_coco_20221126_102719-0ee5bbdf.pth"
 
 num_classes = _base_.num_classes
 num_det_layers = _base_.num_det_layers

@@ -113,7 +113,9 @@ def _identify_media(filepath: FilePath) -> str:
     elif _is_video_file(filepath):
         return "video"
     else:
-        raise HTTPException(status_code=500, detail="미디어의 형식을 인식할 수 없습니다")
+        raise HTTPException(
+            status_code=500, detail="미디어의 형식을 인식할 수 없습니다"
+        )
 
 
 def _get_visualizer_name(filepath: FilePath) -> str:

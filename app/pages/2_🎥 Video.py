@@ -43,7 +43,8 @@ def get_videos() -> list:
         r = httpx.get(BASE_URL + "/videos")
         st.session_state["videos"] = r.json()
     return st.session_state["videos"]
-        
+
+
 def get_video_names() -> list:
     if st.session_state["get_video_names"] is None:
         log.info("get_video_names()")
@@ -66,12 +67,10 @@ def inference(model_name: str, media_filepath: str) -> str:
         log.info(f"inference: output_filepath = {output_filepath!r}")
         st.session_state["inferenced"] = output_filepath
 
+
 def get_inferenced_media(media_filepath: str) -> str:
     log.info(f"inference(media_filepath={media_filepath!r})")
-    r = httpx.get(
-        BASE_URL + "/inference",
-        params={"filepath": media_filepath}
-    )
+    r = httpx.get(BASE_URL + "/inference", params={"filepath": media_filepath})
 
     log.info(f"inference: r.json() = {r.json()!r}")
 
@@ -80,18 +79,21 @@ def get_inferenced_media(media_filepath: str) -> str:
         log.info(f"inference: output_filepath = {output_filepath!r}")
         st.session_state["inferenced_video"] = output_filepath
 
+
 def read_image(image_path: str) -> bytes:
     log.info(f"read_image(image_path={image_path!r})")
     with open(image_path, "rb") as f:
         return f.read()
 
+
 def read_video(video_path: str) -> bytes:
     log.info(f"read_video(video_path={video_path!r})")
     with open(video_path, "rb") as f:
         return f.read()
-    
+
+
 def session_init():
-    print('session init')
+    print("session init")
     if "inferenced_video" not in st.session_state:
         st.session_state["inferenced_video"] = None
     if "models" not in st.session_state:
@@ -106,22 +108,22 @@ def main():
     st.title("Sixth Sense Video Demo Page")
     # if "inferenced" not in st.session_state:
     #     st.session_state["inferenced"] = None
-    
-    session_init()          
+
+    session_init()
 
     models = get_models()
-    images = get_images()
+    get_images()
     videos = get_videos()
     video_names = get_video_names()
 
-    model_name = st.selectbox("Model List", models)
+    st.selectbox("Model List", models)
     video_name = st.selectbox("Video List", video_names, key="select_video")
     video_index = next((i for i, n in enumerate(video_names) if n == video_name))
     log.info(f"video_name: {video_name!r} (type: {type(video_name)}")
     log.info(f"video_index: {video_index!r} (type: {type(video_index)}")
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         video_path = videos[video_index]
         if video_path is not None:
@@ -137,6 +139,7 @@ def main():
         if st.session_state["inferenced_video"] is not None:
             output_video = read_video(st.session_state["inferenced_video"])
             st.video(output_video)
-    
+
+
 if __name__ == "__main__":
     main()

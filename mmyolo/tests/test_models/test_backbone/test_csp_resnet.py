@@ -7,6 +7,7 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmyolo.models import PPYOLOECSPResNet
 from mmyolo.utils import register_all_modules
+
 from .utils import check_norm_state, is_norm
 
 register_all_modules()
@@ -17,7 +18,7 @@ class TestPPYOLOECSPResNet(TestCase):
     def test_init(self):
         # out_indices in range(len(arch_setting) + 1)
         with pytest.raises(AssertionError):
-            PPYOLOECSPResNet(out_indices=(6, ))
+            PPYOLOECSPResNet(out_indices=(6,))
 
         with pytest.raises(ValueError):
             # frozen_stages must in range(-1, len(arch_setting) + 1)
@@ -34,7 +35,7 @@ class TestPPYOLOECSPResNet(TestCase):
             for param in mod.parameters():
                 assert param.requires_grad is False
         for i in range(1, frozen_stages + 1):
-            layer = getattr(model, f'stage{i}')
+            layer = getattr(model, f"stage{i}")
             for mod in layer.modules():
                 if isinstance(mod, _BatchNorm):
                     assert mod.training is False
@@ -48,8 +49,7 @@ class TestPPYOLOECSPResNet(TestCase):
         assert check_norm_state(model.modules(), False)
 
         # Test PPYOLOECSPResNet-P5 forward with widen_factor=0.25
-        model = PPYOLOECSPResNet(
-            arch='P5', widen_factor=0.25, out_indices=range(0, 5))
+        model = PPYOLOECSPResNet(arch="P5", widen_factor=0.25, out_indices=range(0, 5))
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -63,9 +63,8 @@ class TestPPYOLOECSPResNet(TestCase):
 
         # Test PPYOLOECSPResNet forward with dict(type='ReLU')
         model = PPYOLOECSPResNet(
-            widen_factor=0.125,
-            act_cfg=dict(type='ReLU'),
-            out_indices=range(0, 5))
+            widen_factor=0.125, act_cfg=dict(type="ReLU"), out_indices=range(0, 5)
+        )
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -94,11 +93,14 @@ class TestPPYOLOECSPResNet(TestCase):
         assert feat[4].shape == torch.Size((1, 128, 2, 2))
 
         # Test PPYOLOECSPResNet with BatchNorm forward
-        model = PPYOLOECSPResNet(plugins=[
-            dict(
-                cfg=dict(type='mmdet.DropBlock', drop_prob=0.1, block_size=3),
-                stages=(False, False, True, True)),
-        ])
+        model = PPYOLOECSPResNet(
+            plugins=[
+                dict(
+                    cfg=dict(type="mmdet.DropBlock", drop_prob=0.1, block_size=3),
+                    stages=(False, False, True, True),
+                ),
+            ]
+        )
 
         assert len(model.stage1) == 1
         assert len(model.stage2) == 1
