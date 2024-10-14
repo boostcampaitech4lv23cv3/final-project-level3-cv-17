@@ -15,19 +15,25 @@ class TestCollectEnv(TestCase):
         env_info = collect_env()
         print(env_info)
         expected_keys = [
-            'sys.platform', 'Python', 'CUDA available', 'PyTorch',
-            'PyTorch compiling details', 'OpenCV', 'MMEngine', 'GCC'
+            "sys.platform",
+            "Python",
+            "CUDA available",
+            "PyTorch",
+            "PyTorch compiling details",
+            "OpenCV",
+            "MMEngine",
+            "GCC",
         ]
         for key in expected_keys:
             assert key in env_info
 
-        if env_info['CUDA available']:
-            for key in ['CUDA_HOME', 'NVCC']:
+        if env_info["CUDA available"]:
+            for key in ["CUDA_HOME", "NVCC"]:
                 assert key in env_info
 
-        assert env_info['sys.platform'] == sys.platform
-        assert env_info['Python'] == sys.version.replace('\n', '')
+        assert env_info["sys.platform"] == sys.platform
+        assert env_info["Python"] == sys.version.replace("\n", "")
 
-        assert env_info['MMEngine'] == mmengine.__version__
-        assert env_info['MMCV'] == mmcv.__version__
-        assert env_info['MMDetection'] == mmdet.__version__
+        assert env_info["MMEngine"] == mmengine.__version__
+        assert env_info["MMCV"] == mmcv.__version__
+        assert env_info["MMDetection"] == mmdet.__version__

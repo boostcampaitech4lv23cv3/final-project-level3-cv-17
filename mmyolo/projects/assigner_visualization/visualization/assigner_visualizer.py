@@ -23,18 +23,18 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
         name (str): Name of the instance. Defaults to 'visualizer'.
     """
 
-    def __init__(self, name: str = 'visualizer', *args, **kwargs):
+    def __init__(self, name: str = "visualizer", *args, **kwargs):
         super().__init__(name=name, *args, **kwargs)
         # need priors_size from config
         self.priors_size = None
 
-    def draw_grid(self,
-                  stride: int = 8,
-                  line_styles: Union[str, List[str]] = ':',
-                  colors: Union[str, tuple, List[str],
-                                List[tuple]] = (180, 180, 180),
-                  line_widths: Union[Union[int, float],
-                                     List[Union[int, float]]] = 1):
+    def draw_grid(
+        self,
+        stride: int = 8,
+        line_styles: Union[str, List[str]] = ":",
+        colors: Union[str, tuple, List[str], List[tuple]] = (180, 180, 180),
+        line_widths: Union[Union[int, float], List[Union[int, float]]] = 1,
+    ):
         """Draw grids on image.
 
         Args:
@@ -58,37 +58,47 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
                 If ``line_widths`` is single value, all the lines will
                 have the same linewidth. Defaults to 1.
         """
-        assert self._image is not None, 'Please set image using `set_image`'
+        assert self._image is not None, "Please set image using `set_image`"
         # draw vertical lines
-        x_datas_vertical = ((np.arange(self.width // stride - 1) + 1) *
-                            stride).reshape((-1, 1)).repeat(
-                                2, axis=1)
+        x_datas_vertical = (
+            ((np.arange(self.width // stride - 1) + 1) * stride)
+            .reshape((-1, 1))
+            .repeat(2, axis=1)
+        )
         y_datas_vertical = np.array([[0, self.height - 1]]).repeat(
-            self.width // stride - 1, axis=0)
+            self.width // stride - 1, axis=0
+        )
         self.draw_lines(
             x_datas_vertical,
             y_datas_vertical,
             colors=colors,
             line_styles=line_styles,
-            line_widths=line_widths)
+            line_widths=line_widths,
+        )
 
         # draw horizontal lines
         x_datas_horizontal = np.array([[0, self.width - 1]]).repeat(
-            self.height // stride - 1, axis=0)
-        y_datas_horizontal = ((np.arange(self.height // stride - 1) + 1) *
-                              stride).reshape((-1, 1)).repeat(
-                                  2, axis=1)
+            self.height // stride - 1, axis=0
+        )
+        y_datas_horizontal = (
+            ((np.arange(self.height // stride - 1) + 1) * stride)
+            .reshape((-1, 1))
+            .repeat(2, axis=1)
+        )
         self.draw_lines(
             x_datas_horizontal,
             y_datas_horizontal,
             colors=colors,
             line_styles=line_styles,
-            line_widths=line_widths)
+            line_widths=line_widths,
+        )
 
-    def draw_instances_assign(self,
-                              instances: InstanceData,
-                              retained_gt_inds: Tensor,
-                              not_show_label: bool = False):
+    def draw_instances_assign(
+        self,
+        instances: InstanceData,
+        retained_gt_inds: Tensor,
+        not_show_label: bool = False,
+    ):
         """Draw instances of GT.
 
         Args:
@@ -99,13 +109,13 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
             not_show_label (bool): Whether to show gt labels on images.
         """
         assert self.dataset_meta is not None
-        classes = self.dataset_meta['classes']
-        palette = self.dataset_meta['palette']
+        classes = self.dataset_meta["classes"]
+        palette = self.dataset_meta["palette"]
         if len(retained_gt_inds) == 0:
             return self.get_image()
         draw_gt_inds = torch.from_numpy(
-            np.array(
-                list(set(retained_gt_inds.cpu().numpy())), dtype=np.int64))
+            np.array(list(set(retained_gt_inds.cpu().numpy())), dtype=np.int64)
+        )
         bboxes = instances.bboxes[draw_gt_inds]
         labels = instances.labels[draw_gt_inds]
 
@@ -122,37 +132,41 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
             bboxes,
             edge_colors=edge_colors,
             alpha=self.alpha,
-            line_widths=self.line_width)
+            line_widths=self.line_width,
+        )
 
         if not not_show_label:
             positions = bboxes[:, :2] + self.line_width
-            areas = (bboxes[:, 3] - bboxes[:, 1]) * (
-                bboxes[:, 2] - bboxes[:, 0])
+            areas = (bboxes[:, 3] - bboxes[:, 1]) * (bboxes[:, 2] - bboxes[:, 0])
             scales = _get_adaptive_scales(areas)
             for i, (pos, label) in enumerate(zip(positions, labels)):
-                label_text = classes[
-                    label] if classes is not None else f'class {label}'
+                label_text = classes[label] if classes is not None else f"class {label}"
 
                 self.draw_texts(
                     label_text,
                     pos,
                     colors=text_colors[i],
                     font_sizes=int(13 * scales[i]),
-                    bboxes=[{
-                        'facecolor': 'black',
-                        'alpha': 0.8,
-                        'pad': 0.7,
-                        'edgecolor': 'none'
-                    }])
+                    bboxes=[
+                        {
+                            "facecolor": "black",
+                            "alpha": 0.8,
+                            "pad": 0.7,
+                            "edgecolor": "none",
+                        }
+                    ],
+                )
 
-    def draw_positive_assign(self,
-                             grid_x_inds: Tensor,
-                             grid_y_inds: Tensor,
-                             class_inds: Tensor,
-                             stride: int,
-                             bboxes: Union[Tensor, HorizontalBoxes],
-                             retained_gt_inds: Tensor,
-                             offset: float = 0.5):
+    def draw_positive_assign(
+        self,
+        grid_x_inds: Tensor,
+        grid_y_inds: Tensor,
+        class_inds: Tensor,
+        stride: int,
+        bboxes: Union[Tensor, HorizontalBoxes],
+        retained_gt_inds: Tensor,
+        offset: float = 0.5,
+    ):
         """
 
         Args:
@@ -175,7 +189,7 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
 
         # The PALETTE in the dataset_meta is required
         assert self.dataset_meta is not None
-        palette = self.dataset_meta['PALETTE']
+        palette = self.dataset_meta["PALETTE"]
         x = ((grid_x_inds + offset) * stride).long()
         y = ((grid_y_inds + offset) * stride).long()
         center = torch.stack((x, y), dim=-1)
@@ -187,21 +201,19 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
         colors = [palette[i] for i in class_inds]
 
         self.draw_circles(
-            center,
-            radius,
-            colors,
-            line_widths=0,
-            face_colors=colors,
-            alpha=1.0)
+            center, radius, colors, line_widths=0, face_colors=colors, alpha=1.0
+        )
 
-    def draw_prior(self,
-                   grid_x_inds: Tensor,
-                   grid_y_inds: Tensor,
-                   class_inds: Tensor,
-                   stride: int,
-                   feat_ind: int,
-                   prior_ind: int,
-                   offset: float = 0.5):
+    def draw_prior(
+        self,
+        grid_x_inds: Tensor,
+        grid_y_inds: Tensor,
+        class_inds: Tensor,
+        stride: int,
+        feat_ind: int,
+        prior_ind: int,
+        offset: float = 0.5,
+    ):
         """Draw priors on image.
 
         Args:
@@ -218,9 +230,9 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
                 with corresponding stride. Defaults to 0.5.
         """
 
-        palette = self.dataset_meta['PALETTE']
-        center_x = ((grid_x_inds + offset) * stride)
-        center_y = ((grid_y_inds + offset) * stride)
+        palette = self.dataset_meta["PALETTE"]
+        center_x = (grid_x_inds + offset) * stride
+        center_y = (grid_y_inds + offset) * stride
         xyxy = torch.stack((center_x, center_y, center_x, center_y), dim=1)
         assert self.priors_size is not None
         xyxy += self.priors_size[feat_ind][prior_ind]
@@ -230,15 +242,18 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
             xyxy,
             edge_colors=colors,
             alpha=self.alpha,
-            line_styles='--',
-            line_widths=math.ceil(self.line_width * 0.3))
+            line_styles="--",
+            line_widths=math.ceil(self.line_width * 0.3),
+        )
 
-    def draw_assign(self,
-                    image: np.ndarray,
-                    assign_results: List[List[dict]],
-                    gt_instances: InstanceData,
-                    show_prior: bool = False,
-                    not_show_label: bool = False) -> np.ndarray:
+    def draw_assign(
+        self,
+        image: np.ndarray,
+        assign_results: List[List[dict]],
+        gt_instances: InstanceData,
+        show_prior: bool = False,
+        not_show_label: bool = False,
+    ) -> np.ndarray:
         """Draw assigning results.
 
         Args:
@@ -255,42 +270,57 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
         img_show_list = []
         for feat_ind, assign_results_feat in enumerate(assign_results):
             img_show_list_feat = []
-            for prior_ind, assign_results_prior in enumerate(
-                    assign_results_feat):
+            for prior_ind, assign_results_prior in enumerate(assign_results_feat):
                 self.set_image(image)
                 h, w = image.shape[:2]
 
                 # draw grid
-                stride = assign_results_prior['stride']
+                stride = assign_results_prior["stride"]
                 self.draw_grid(stride)
 
                 # draw prior on matched gt
-                grid_x_inds = assign_results_prior['grid_x_inds']
-                grid_y_inds = assign_results_prior['grid_y_inds']
-                class_inds = assign_results_prior['class_inds']
-                prior_ind = assign_results_prior['prior_ind']
+                grid_x_inds = assign_results_prior["grid_x_inds"]
+                grid_y_inds = assign_results_prior["grid_y_inds"]
+                class_inds = assign_results_prior["class_inds"]
+                prior_ind = assign_results_prior["prior_ind"]
                 if show_prior:
-                    self.draw_prior(grid_x_inds, grid_y_inds, class_inds,
-                                    stride, feat_ind, prior_ind)
+                    self.draw_prior(
+                        grid_x_inds,
+                        grid_y_inds,
+                        class_inds,
+                        stride,
+                        feat_ind,
+                        prior_ind,
+                    )
 
                 # draw matched gt
-                retained_gt_inds = assign_results_prior['retained_gt_inds']
-                self.draw_instances_assign(gt_instances, retained_gt_inds,
-                                           not_show_label)
+                retained_gt_inds = assign_results_prior["retained_gt_inds"]
+                self.draw_instances_assign(
+                    gt_instances, retained_gt_inds, not_show_label
+                )
 
                 # draw positive
-                self.draw_positive_assign(grid_x_inds, grid_y_inds, class_inds,
-                                          stride, gt_instances.bboxes,
-                                          retained_gt_inds)
+                self.draw_positive_assign(
+                    grid_x_inds,
+                    grid_y_inds,
+                    class_inds,
+                    stride,
+                    gt_instances.bboxes,
+                    retained_gt_inds,
+                )
 
                 # draw title
                 base_prior = self.priors_size[feat_ind][prior_ind]
-                prior_size = (base_prior[2] - base_prior[0],
-                              base_prior[3] - base_prior[1])
+                prior_size = (
+                    base_prior[2] - base_prior[0],
+                    base_prior[3] - base_prior[1],
+                )
                 pos = np.array((20, 20))
-                text = f'feat_ind: {feat_ind}  ' \
-                       f'prior_ind: {prior_ind} ' \
-                       f'prior_size: ({prior_size[0]}, {prior_size[1]})'
+                text = (
+                    f"feat_ind: {feat_ind}  "
+                    f"prior_ind: {prior_ind} "
+                    f"prior_size: ({prior_size[0]}, {prior_size[1]})"
+                )
                 scales = _get_adaptive_scales(np.array([h * w / 16]))
                 font_sizes = int(13 * scales)
                 self.draw_texts(
@@ -298,12 +328,15 @@ class YOLOAssignerVisualizer(DetLocalVisualizer):
                     pos,
                     colors=self.text_color,
                     font_sizes=font_sizes,
-                    bboxes=[{
-                        'facecolor': 'black',
-                        'alpha': 0.8,
-                        'pad': 0.7,
-                        'edgecolor': 'none'
-                    }])
+                    bboxes=[
+                        {
+                            "facecolor": "black",
+                            "alpha": 0.8,
+                            "pad": 0.7,
+                            "edgecolor": "none",
+                        }
+                    ],
+                )
 
                 img_show = self.get_image()
                 img_show = mmcv.impad(img_show, padding=(5, 5, 5, 5))

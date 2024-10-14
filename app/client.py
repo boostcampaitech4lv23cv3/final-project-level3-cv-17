@@ -78,7 +78,7 @@ def main():
         st.session_state["inferenced"] = None
 
     models = get_models()
-    images = get_images()
+    get_images()
     videos = get_videos()
     video_names = get_video_names()
 

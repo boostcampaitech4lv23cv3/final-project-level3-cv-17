@@ -6,9 +6,9 @@ import torch
 from parameterized import parameterized
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmyolo.models.backbones import (YOLOv5CSPDarknet, YOLOv8CSPDarknet,
-                                     YOLOXCSPDarknet)
+from mmyolo.models.backbones import YOLOv5CSPDarknet, YOLOv8CSPDarknet, YOLOXCSPDarknet
 from mmyolo.utils import register_all_modules
+
 from .utils import check_norm_state, is_norm
 
 register_all_modules()
@@ -16,19 +16,21 @@ register_all_modules()
 
 class TestCSPDarknet(TestCase):
 
-    @parameterized.expand([(YOLOv5CSPDarknet, ), (YOLOXCSPDarknet, ),
-                           (YOLOv8CSPDarknet, )])
+    @parameterized.expand(
+        [(YOLOv5CSPDarknet,), (YOLOXCSPDarknet,), (YOLOv8CSPDarknet,)]
+    )
     def test_init(self, module_class):
         # out_indices in range(len(arch_setting) + 1)
         with pytest.raises(AssertionError):
-            module_class(out_indices=(6, ))
+            module_class(out_indices=(6,))
 
         with pytest.raises(ValueError):
             # frozen_stages must in range(-1, len(arch_setting) + 1)
             module_class(frozen_stages=6)
 
-    @parameterized.expand([(YOLOv5CSPDarknet, ), (YOLOXCSPDarknet, ),
-                           (YOLOv8CSPDarknet, )])
+    @parameterized.expand(
+        [(YOLOv5CSPDarknet,), (YOLOXCSPDarknet,), (YOLOv8CSPDarknet,)]
+    )
     def test_forward(self, module_class):
         # Test CSPDarknet with first stage frozen
         frozen_stages = 1
@@ -40,7 +42,7 @@ class TestCSPDarknet(TestCase):
             for param in mod.parameters():
                 assert param.requires_grad is False
         for i in range(1, frozen_stages + 1):
-            layer = getattr(model, f'stage{i}')
+            layer = getattr(model, f"stage{i}")
             for mod in layer.modules():
                 if isinstance(mod, _BatchNorm):
                     assert mod.training is False
@@ -54,8 +56,7 @@ class TestCSPDarknet(TestCase):
         assert check_norm_state(model.modules(), False)
 
         # Test CSPDarknet-P5 forward with widen_factor=0.25
-        model = module_class(
-            arch='P5', widen_factor=0.25, out_indices=range(0, 5))
+        model = module_class(arch="P5", widen_factor=0.25, out_indices=range(0, 5))
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -69,9 +70,8 @@ class TestCSPDarknet(TestCase):
 
         # Test CSPDarknet forward with dict(type='ReLU')
         model = module_class(
-            widen_factor=0.125,
-            act_cfg=dict(type='ReLU'),
-            out_indices=range(0, 5))
+            widen_factor=0.125, act_cfg=dict(type="ReLU"), out_indices=range(0, 5)
+        )
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -100,11 +100,14 @@ class TestCSPDarknet(TestCase):
         assert feat[4].shape == torch.Size((1, 128, 2, 2))
 
         # Test CSPDarknet with Dropout Block
-        model = module_class(plugins=[
-            dict(
-                cfg=dict(type='mmdet.DropBlock', drop_prob=0.1, block_size=3),
-                stages=(False, False, True, True)),
-        ])
+        model = module_class(
+            plugins=[
+                dict(
+                    cfg=dict(type="mmdet.DropBlock", drop_prob=0.1, block_size=3),
+                    stages=(False, False, True, True),
+                ),
+            ]
+        )
 
         assert len(model.stage1) == 2
         assert len(model.stage2) == 2

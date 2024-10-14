@@ -19,7 +19,7 @@ image:
   format:
     - .jpg
     - .png
-    
+
 video:
   directory: /opt/ml/input/video/
   format:
@@ -36,7 +36,7 @@ image_output_path:
 google:
   bucket: 'awesome-gcp12'
   path: 'https://storage.cloud.google.com/'
-  
+
 
 server:
   host: 0.0.0.0
