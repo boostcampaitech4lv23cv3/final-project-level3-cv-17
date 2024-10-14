@@ -24,18 +24,22 @@ def register_all_modules(init_default_scope: bool = True):
     import mmyolo.models  # noqa: F401,F403
 
     if init_default_scope:
-        never_created = DefaultScope.get_current_instance() is None \
-                        or not DefaultScope.check_instance_created('mmyolo')
+        never_created = (
+            DefaultScope.get_current_instance() is None
+            or not DefaultScope.check_instance_created("mmyolo")
+        )
         if never_created:
-            DefaultScope.get_instance('mmyolo', scope_name='mmyolo')
+            DefaultScope.get_instance("mmyolo", scope_name="mmyolo")
             return
         current_scope = DefaultScope.get_current_instance()
-        if current_scope.scope_name != 'mmyolo':
-            warnings.warn('The current default scope '
-                          f'"{current_scope.scope_name}" is not "mmyolo", '
-                          '`register_all_modules` will force the current'
-                          'default scope to be "mmyolo". If this is not '
-                          'expected, please set `init_default_scope=False`.')
+        if current_scope.scope_name != "mmyolo":
+            warnings.warn(
+                "The current default scope "
+                f'"{current_scope.scope_name}" is not "mmyolo", '
+                "`register_all_modules` will force the current"
+                'default scope to be "mmyolo". If this is not '
+                "expected, please set `init_default_scope=False`."
+            )
             # avoid name conflict
-            new_instance_name = f'mmyolo-{datetime.datetime.now()}'
-            DefaultScope.get_instance(new_instance_name, scope_name='mmyolo')
+            new_instance_name = f"mmyolo-{datetime.datetime.now()}"
+            DefaultScope.get_instance(new_instance_name, scope_name="mmyolo")

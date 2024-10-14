@@ -26,6 +26,6 @@ class TestCBAM(TestCase):
         self.assertEqual(out.shape, tensor_shape)
 
         # test other act_cfg in ChannelAttention
-        cbam = CBAM(in_channels=16, act_cfg=dict(type='Sigmoid'))
+        cbam = CBAM(in_channels=16, act_cfg=dict(type="Sigmoid"))
         out = cbam(images)
         self.assertEqual(out.shape, tensor_shape)

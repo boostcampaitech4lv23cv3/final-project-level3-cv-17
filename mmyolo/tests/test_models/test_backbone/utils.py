@@ -9,8 +9,10 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 def is_block(modules):
     """Check if is ResNet building block."""
-    if isinstance(modules, (BasicBlock, Bottleneck, BottleneckX, Bottle2neck,
-                            SimplifiedBasicBlock)):
+    if isinstance(
+        modules,
+        (BasicBlock, Bottleneck, BottleneckX, Bottle2neck, SimplifiedBasicBlock),
+    ):
         return True
     return False
 

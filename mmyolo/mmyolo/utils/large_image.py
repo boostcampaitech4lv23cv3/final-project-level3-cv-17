@@ -6,9 +6,11 @@ from mmdet.structures import DetDataSample, SampleList
 from mmengine.structures import InstanceData
 
 
-def shift_predictions(det_data_samples: SampleList,
-                      offsets: Sequence[Tuple[int, int]],
-                      src_image_shape: Tuple[int, int]) -> SampleList:
+def shift_predictions(
+    det_data_samples: SampleList,
+    offsets: Sequence[Tuple[int, int]],
+    src_image_shape: Tuple[int, int],
+) -> SampleList:
     """Shift predictions to the original image.
 
     Args:
@@ -23,20 +25,22 @@ def shift_predictions(det_data_samples: SampleList,
     try:
         from sahi.slicing import shift_bboxes, shift_masks
     except ImportError:
-        raise ImportError('Please run "pip install -U sahi" '
-                          'to install sahi first for large image inference.')
+        raise ImportError(
+            'Please run "pip install -U sahi" '
+            "to install sahi first for large image inference."
+        )
 
-    assert len(det_data_samples) == len(
-        offsets), 'The `results` should has the ' 'same length with `offsets`.'
+    assert len(det_data_samples) == len(offsets), (
+        "The `results` should has the " "same length with `offsets`."
+    )
     shifted_predictions = []
     for det_data_sample, offset in zip(det_data_samples, offsets):
         pred_inst = det_data_sample.pred_instances.clone()
 
         # shift bboxes and masks
         pred_inst.bboxes = shift_bboxes(pred_inst.bboxes, offset)
-        if 'masks' in det_data_sample:
-            pred_inst.masks = shift_masks(pred_inst.masks, offset,
-                                          src_image_shape)
+        if "masks" in det_data_sample:
+            pred_inst.masks = shift_masks(pred_inst.masks, offset, src_image_shape)
 
         shifted_predictions.append(pred_inst.clone())
 
@@ -45,10 +49,12 @@ def shift_predictions(det_data_samples: SampleList,
     return shifted_predictions
 
 
-def merge_results_by_nms(results: SampleList, offsets: Sequence[Tuple[int,
-                                                                      int]],
-                         src_image_shape: Tuple[int, int],
-                         nms_cfg: dict) -> DetDataSample:
+def merge_results_by_nms(
+    results: SampleList,
+    offsets: Sequence[Tuple[int, int]],
+    src_image_shape: Tuple[int, int],
+    nms_cfg: dict,
+) -> DetDataSample:
     """Merge patch results by nms.
 
     Args:
@@ -68,7 +74,8 @@ def merge_results_by_nms(results: SampleList, offsets: Sequence[Tuple[int,
         boxes=shifted_instances.bboxes,
         scores=shifted_instances.scores,
         idxs=shifted_instances.labels,
-        nms_cfg=nms_cfg)
+        nms_cfg=nms_cfg,
+    )
     merged_instances = shifted_instances[keeps]
 
     merged_result = results[0].clone()

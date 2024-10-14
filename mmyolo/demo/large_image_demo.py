@@ -21,68 +21,68 @@ from mmdet.apis import inference_detector, init_detector
 from mmengine.logging import print_log
 from mmengine.utils import ProgressBar
 
-try:
-    from sahi.slicing import slice_image
-except ImportError:
-    raise ImportError('Please run "pip install -U sahi" '
-                      'to install sahi first for large image inference.')
-
 from mmyolo.registry import VISUALIZERS
 from mmyolo.utils import register_all_modules, switch_to_deploy
 from mmyolo.utils.large_image import merge_results_by_nms, shift_predictions
 from mmyolo.utils.misc import get_file_list
 
+try:
+    from sahi.slicing import slice_image
+except ImportError:
+    raise ImportError(
+        'Please run "pip install -U sahi" '
+        "to install sahi first for large image inference."
+    )
+
 
 def parse_args():
-    parser = ArgumentParser(
-        description='Perform MMYOLO inference on large images.')
+    parser = ArgumentParser(description="Perform MMYOLO inference on large images.")
+    parser.add_argument("img", help="Image path, include image file, dir and URL.")
+    parser.add_argument("config", help="Config file")
+    parser.add_argument("checkpoint", help="Checkpoint file")
+    parser.add_argument("--out-dir", default="./output", help="Path to output file")
+    parser.add_argument("--device", default="cuda:0", help="Device used for inference")
     parser.add_argument(
-        'img', help='Image path, include image file, dir and URL.')
-    parser.add_argument('config', help='Config file')
-    parser.add_argument('checkpoint', help='Checkpoint file')
+        "--show", action="store_true", help="Show the detection results"
+    )
     parser.add_argument(
-        '--out-dir', default='./output', help='Path to output file')
+        "--deploy", action="store_true", help="Switch model to deployment mode"
+    )
     parser.add_argument(
-        '--device', default='cuda:0', help='Device used for inference')
+        "--score-thr", type=float, default=0.3, help="Bbox score threshold"
+    )
     parser.add_argument(
-        '--show', action='store_true', help='Show the detection results')
+        "--patch-size", type=int, default=640, help="The size of patches"
+    )
     parser.add_argument(
-        '--deploy',
-        action='store_true',
-        help='Switch model to deployment mode')
-    parser.add_argument(
-        '--score-thr', type=float, default=0.3, help='Bbox score threshold')
-    parser.add_argument(
-        '--patch-size', type=int, default=640, help='The size of patches')
-    parser.add_argument(
-        '--patch-overlap-ratio',
+        "--patch-overlap-ratio",
         type=int,
         default=0.25,
-        help='Ratio of overlap between two patches')
+        help="Ratio of overlap between two patches",
+    )
     parser.add_argument(
-        '--merge-iou-thr',
+        "--merge-iou-thr",
         type=float,
         default=0.25,
-        help='IoU threshould for merging results')
+        help="IoU threshould for merging results",
+    )
     parser.add_argument(
-        '--merge-nms-type',
-        type=str,
-        default='nms',
-        help='NMS type for merging results')
+        "--merge-nms-type", type=str, default="nms", help="NMS type for merging results"
+    )
     parser.add_argument(
-        '--batch-size',
+        "--batch-size",
         type=int,
         default=1,
-        help='Batch size, must greater than or equal to 1')
+        help="Batch size, must greater than or equal to 1",
+    )
     parser.add_argument(
-        '--debug',
-        action='store_true',
-        help='Export debug results before merging')
+        "--debug", action="store_true", help="Export debug results before merging"
+    )
     parser.add_argument(
-        '--save-patch',
-        action='store_true',
-        help='Save the results of each patch. '
-        'The `--debug` must be enabled.')
+        "--save-patch",
+        action="store_true",
+        help="Save the results of each patch. " "The `--debug` must be enabled.",
+    )
     args = parser.parse_args()
     return args
 
@@ -110,8 +110,7 @@ def main():
     files, source_type = get_file_list(args.img)
 
     # start detector inference
-    print(f'Performing inference on {len(files)} images.... '
-          'This may take a while.')
+    print(f"Performing inference on {len(files)} images.... " "This may take a while.")
     progress_bar = ProgressBar(len(files))
     for file in files:
         # read image
@@ -145,12 +144,12 @@ def main():
                 break
             start += args.batch_size
 
-        if source_type['is_dir']:
-            filename = os.path.relpath(file, args.img).replace('/', '_')
+        if source_type["is_dir"]:
+            filename = os.path.relpath(file, args.img).replace("/", "_")
         else:
             filename = os.path.basename(file)
 
-        img = mmcv.imconvert(img, 'bgr', 'rgb')
+        img = mmcv.imconvert(img, "bgr", "rgb")
         out_file = None if args.show else os.path.join(args.out_dir, filename)
 
         # export debug images
@@ -161,13 +160,15 @@ def main():
             shifted_instances = shift_predictions(
                 slice_results,
                 sliced_image_object.starting_pixels,
-                src_image_shape=(height, width))
+                src_image_shape=(height, width),
+            )
             merged_result = slice_results[0].clone()
             merged_result.pred_instances = shifted_instances
 
-            debug_file_name = name + '_debug' + suffix
-            debug_out_file = None if args.show else os.path.join(
-                args.out_dir, debug_file_name)
+            debug_file_name = name + "_debug" + suffix
+            debug_out_file = (
+                None if args.show else os.path.join(args.out_dir, debug_file_name)
+            )
             visualizer.set_image(img.copy())
 
             debug_grids = []
@@ -177,28 +178,23 @@ def main():
                 end_point_x = start_point_x + args.patch_size
                 end_point_y = start_point_y + args.patch_size
                 debug_grids.append(
-                    [start_point_x, start_point_y, end_point_x, end_point_y])
+                    [start_point_x, start_point_y, end_point_x, end_point_y]
+                )
             debug_grids = np.array(debug_grids)
-            debug_grids[:, 0::2] = np.clip(debug_grids[:, 0::2], 1,
-                                           img.shape[1] - 1)
-            debug_grids[:, 1::2] = np.clip(debug_grids[:, 1::2], 1,
-                                           img.shape[0] - 1)
+            debug_grids[:, 0::2] = np.clip(debug_grids[:, 0::2], 1, img.shape[1] - 1)
+            debug_grids[:, 1::2] = np.clip(debug_grids[:, 1::2], 1, img.shape[0] - 1)
 
             palette = np.random.randint(0, 256, size=(len(debug_grids), 3))
             palette = [tuple(c) for c in palette]
-            line_styles = random.choices(['-', '-.', ':'], k=len(debug_grids))
+            line_styles = random.choices(["-", "-.", ":"], k=len(debug_grids))
             visualizer.draw_bboxes(
-                debug_grids,
-                edge_colors=palette,
-                alpha=1,
-                line_styles=line_styles)
-            visualizer.draw_bboxes(
-                debug_grids, face_colors=palette, alpha=0.15)
+                debug_grids, edge_colors=palette, alpha=1, line_styles=line_styles
+            )
+            visualizer.draw_bboxes(debug_grids, face_colors=palette, alpha=0.15)
 
             visualizer.draw_texts(
-                list(range(len(debug_grids))),
-                debug_grids[:, :2] + 5,
-                colors='w')
+                list(range(len(debug_grids))), debug_grids[:, :2] + 5, colors="w"
+            )
 
             visualizer.add_datasample(
                 debug_file_name,
@@ -212,17 +208,15 @@ def main():
             )
 
             if args.save_patch:
-                debug_patch_out_dir = os.path.join(args.out_dir,
-                                                   f'{name}_patch')
+                debug_patch_out_dir = os.path.join(args.out_dir, f"{name}_patch")
                 for i, slice_result in enumerate(slice_results):
                     patch_out_file = os.path.join(
-                        debug_patch_out_dir,
-                        f'{filename}_slice_{i}_result.jpg')
-                    image = mmcv.imconvert(sliced_image_object.images[i],
-                                           'bgr', 'rgb')
+                        debug_patch_out_dir, f"{filename}_slice_{i}_result.jpg"
+                    )
+                    image = mmcv.imconvert(sliced_image_object.images[i], "bgr", "rgb")
 
                     visualizer.add_datasample(
-                        'patch_result',
+                        "patch_result",
                         image,
                         data_sample=slice_result,
                         draw_gt=False,
@@ -236,10 +230,8 @@ def main():
             slice_results,
             sliced_image_object.starting_pixels,
             src_image_shape=(height, width),
-            nms_cfg={
-                'type': args.merge_nms_type,
-                'iou_thr': args.merge_iou_thr
-            })
+            nms_cfg={"type": args.merge_nms_type, "iou_thr": args.merge_iou_thr},
+        )
 
         visualizer.add_datasample(
             filename,
@@ -254,9 +246,8 @@ def main():
         progress_bar.update()
 
     if not args.show or (args.debug and args.save_patch):
-        print_log(
-            f'\nResults have been saved at {os.path.abspath(args.out_dir)}')
+        print_log(f"\nResults have been saved at {os.path.abspath(args.out_dir)}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

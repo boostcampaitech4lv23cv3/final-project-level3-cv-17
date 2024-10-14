@@ -4,10 +4,13 @@ from typing import Optional, Sequence, Tuple, Union
 import numpy as np
 import torch
 import torch.nn as nn
-from mmcv.cnn import (ConvModule, DepthwiseSeparableConvModule, MaxPool2d,
-                      build_norm_layer)
-from mmdet.models.layers.csp_layer import \
-    DarknetBottleneck as MMDET_DarknetBottleneck
+from mmcv.cnn import (
+    ConvModule,
+    DepthwiseSeparableConvModule,
+    MaxPool2d,
+    build_norm_layer,
+)
+from mmdet.models.layers.csp_layer import DarknetBottleneck as MMDET_DarknetBottleneck
 from mmdet.utils import ConfigType, OptConfigType, OptMultiConfig
 from mmengine.model import BaseModule
 from mmengine.utils import digit_version
@@ -15,8 +18,8 @@ from torch import Tensor
 
 from mmyolo.registry import MODELS
 
-if digit_version(torch.__version__) >= digit_version('1.7.0'):
-    MODELS.register_module(module=nn.SiLU, name='SiLU')
+if digit_version(torch.__version__) >= digit_version("1.7.0"):
+    MODELS.register_module(module=nn.SiLU, name="SiLU")
 else:
 
     class SiLU(nn.Module):
@@ -28,7 +31,7 @@ else:
         def forward(self, inputs) -> Tensor:
             return inputs * torch.sigmoid(inputs)
 
-    MODELS.register_module(module=SiLU, name='SiLU')
+    MODELS.register_module(module=SiLU, name="SiLU")
 
 
 class SPPFBottleneck(BaseModule):
@@ -57,17 +60,18 @@ class SPPFBottleneck(BaseModule):
             Defaults to None.
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_sizes: Union[int, Sequence[int]] = 5,
-                 use_conv_first: bool = True,
-                 mid_channels_scale: float = 0.5,
-                 conv_cfg: ConfigType = None,
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.03, eps=0.001),
-                 act_cfg: ConfigType = dict(type='SiLU', inplace=True),
-                 init_cfg: OptMultiConfig = None):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_sizes: Union[int, Sequence[int]] = 5,
+        use_conv_first: bool = True,
+        mid_channels_scale: float = 0.5,
+        conv_cfg: ConfigType = None,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+        init_cfg: OptMultiConfig = None,
+    ):
         super().__init__(init_cfg)
 
         if use_conv_first:
@@ -79,20 +83,24 @@ class SPPFBottleneck(BaseModule):
                 stride=1,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg)
+                act_cfg=act_cfg,
+            )
         else:
             mid_channels = in_channels
             self.conv1 = None
         self.kernel_sizes = kernel_sizes
         if isinstance(kernel_sizes, int):
             self.poolings = nn.MaxPool2d(
-                kernel_size=kernel_sizes, stride=1, padding=kernel_sizes // 2)
+                kernel_size=kernel_sizes, stride=1, padding=kernel_sizes // 2
+            )
             conv2_in_channels = mid_channels * 4
         else:
-            self.poolings = nn.ModuleList([
-                nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks // 2)
-                for ks in kernel_sizes
-            ])
+            self.poolings = nn.ModuleList(
+                [
+                    nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks // 2)
+                    for ks in kernel_sizes
+                ]
+            )
             conv2_in_channels = mid_channels * (len(kernel_sizes) + 1)
 
         self.conv2 = ConvModule(
@@ -101,7 +109,8 @@ class SPPFBottleneck(BaseModule):
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         """Forward process
@@ -115,8 +124,7 @@ class SPPFBottleneck(BaseModule):
             y2 = self.poolings(y1)
             x = torch.cat([x, y1, y2, self.poolings(y2)], dim=1)
         else:
-            x = torch.cat(
-                [x] + [pooling(x) for pooling in self.poolings], dim=1)
+            x = torch.cat([x] + [pooling(x) for pooling in self.poolings], dim=1)
         x = self.conv2(x)
         return x
 
@@ -149,22 +157,23 @@ class RepVGGBlock(nn.Module):
         deploy (bool): Whether in deploy mode. Default: False
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, Tuple[int]] = 3,
-                 stride: Union[int, Tuple[int]] = 1,
-                 padding: Union[int, Tuple[int]] = 1,
-                 dilation: Union[int, Tuple[int]] = 1,
-                 groups: Optional[int] = 1,
-                 padding_mode: Optional[str] = 'zeros',
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.03, eps=0.001),
-                 act_cfg: ConfigType = dict(type='ReLU', inplace=True),
-                 use_se: bool = False,
-                 use_alpha: bool = False,
-                 use_bn_first=True,
-                 deploy: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, Tuple[int]] = 3,
+        stride: Union[int, Tuple[int]] = 1,
+        padding: Union[int, Tuple[int]] = 1,
+        dilation: Union[int, Tuple[int]] = 1,
+        groups: Optional[int] = 1,
+        padding_mode: Optional[str] = "zeros",
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="ReLU", inplace=True),
+        use_se: bool = False,
+        use_alpha: bool = False,
+        use_bn_first=True,
+        deploy: bool = False,
+    ):
         super().__init__()
         self.deploy = deploy
         self.groups = groups
@@ -179,14 +188,18 @@ class RepVGGBlock(nn.Module):
         self.nonlinearity = MODELS.build(act_cfg)
 
         if use_se:
-            raise NotImplementedError('se block not supported yet')
+            raise NotImplementedError("se block not supported yet")
         else:
             self.se = nn.Identity()
 
         if use_alpha:
-            alpha = torch.ones([
-                1,
-            ], dtype=torch.float32, requires_grad=True)
+            alpha = torch.ones(
+                [
+                    1,
+                ],
+                dtype=torch.float32,
+                requires_grad=True,
+            )
             self.alpha = nn.Parameter(alpha, requires_grad=True)
         else:
             self.alpha = None
@@ -201,12 +214,14 @@ class RepVGGBlock(nn.Module):
                 dilation=dilation,
                 groups=groups,
                 bias=True,
-                padding_mode=padding_mode)
+                padding_mode=padding_mode,
+            )
 
         else:
             if use_bn_first and (out_channels == in_channels) and stride == 1:
                 self.rbr_identity = build_norm_layer(
-                    norm_cfg, num_features=in_channels)[1]
+                    norm_cfg, num_features=in_channels
+                )[1]
             else:
                 self.rbr_identity = None
 
@@ -219,7 +234,8 @@ class RepVGGBlock(nn.Module):
                 groups=groups,
                 bias=False,
                 norm_cfg=norm_cfg,
-                act_cfg=None)
+                act_cfg=None,
+            )
             self.rbr_1x1 = ConvModule(
                 in_channels=in_channels,
                 out_channels=out_channels,
@@ -229,7 +245,8 @@ class RepVGGBlock(nn.Module):
                 groups=groups,
                 bias=False,
                 norm_cfg=norm_cfg,
-                act_cfg=None)
+                act_cfg=None,
+            )
 
     def forward(self, inputs: Tensor) -> Tensor:
         """Forward process.
@@ -239,7 +256,7 @@ class RepVGGBlock(nn.Module):
         Returns:
             Tensor: The output tensor.
         """
-        if hasattr(self, 'rbr_reparam'):
+        if hasattr(self, "rbr_reparam"):
             return self.nonlinearity(self.se(self.rbr_reparam(inputs)))
 
         if self.rbr_identity is None:
@@ -249,12 +266,13 @@ class RepVGGBlock(nn.Module):
         if self.alpha:
             return self.nonlinearity(
                 self.se(
-                    self.rbr_dense(inputs) +
-                    self.alpha * self.rbr_1x1(inputs) + id_out))
+                    self.rbr_dense(inputs) + self.alpha * self.rbr_1x1(inputs) + id_out
+                )
+            )
         else:
             return self.nonlinearity(
-                self.se(
-                    self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out))
+                self.se(self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out)
+            )
 
     def get_equivalent_kernel_bias(self):
         """Derives the equivalent kernel and bias in a differentiable way.
@@ -266,11 +284,17 @@ class RepVGGBlock(nn.Module):
         kernel1x1, bias1x1 = self._fuse_bn_tensor(self.rbr_1x1)
         kernelid, biasid = self._fuse_bn_tensor(self.rbr_identity)
         if self.alpha:
-            return kernel3x3 + self.alpha * self._pad_1x1_to_3x3_tensor(
-                kernel1x1) + kernelid, bias3x3 + self.alpha * bias1x1 + biasid
+            return (
+                kernel3x3
+                + self.alpha * self._pad_1x1_to_3x3_tensor(kernel1x1)
+                + kernelid,
+                bias3x3 + self.alpha * bias1x1 + biasid,
+            )
         else:
-            return kernel3x3 + self._pad_1x1_to_3x3_tensor(
-                kernel1x1) + kernelid, bias3x3 + bias1x1 + biasid
+            return (
+                kernel3x3 + self._pad_1x1_to_3x3_tensor(kernel1x1) + kernelid,
+                bias3x3 + bias1x1 + biasid,
+            )
 
     def _pad_1x1_to_3x3_tensor(self, kernel1x1):
         """Pad 1x1 tensor to 3x3.
@@ -306,14 +330,14 @@ class RepVGGBlock(nn.Module):
             eps = branch.bn.eps
         else:
             assert isinstance(branch, (nn.SyncBatchNorm, nn.BatchNorm2d))
-            if not hasattr(self, 'id_tensor'):
+            if not hasattr(self, "id_tensor"):
                 input_dim = self.in_channels // self.groups
-                kernel_value = np.zeros((self.in_channels, input_dim, 3, 3),
-                                        dtype=np.float32)
+                kernel_value = np.zeros(
+                    (self.in_channels, input_dim, 3, 3), dtype=np.float32
+                )
                 for i in range(self.in_channels):
                     kernel_value[i, i % input_dim, 1, 1] = 1
-                self.id_tensor = torch.from_numpy(kernel_value).to(
-                    branch.weight.device)
+                self.id_tensor = torch.from_numpy(kernel_value).to(branch.weight.device)
             kernel = self.id_tensor
             running_mean = branch.running_mean
             running_var = branch.running_var
@@ -326,7 +350,7 @@ class RepVGGBlock(nn.Module):
 
     def switch_to_deploy(self):
         """Switch to deploy mode."""
-        if hasattr(self, 'rbr_reparam'):
+        if hasattr(self, "rbr_reparam"):
             return
         kernel, bias = self.get_equivalent_kernel_bias()
         self.rbr_reparam = nn.Conv2d(
@@ -337,17 +361,18 @@ class RepVGGBlock(nn.Module):
             padding=self.rbr_dense.conv.padding,
             dilation=self.rbr_dense.conv.dilation,
             groups=self.rbr_dense.conv.groups,
-            bias=True)
+            bias=True,
+        )
         self.rbr_reparam.weight.data = kernel
         self.rbr_reparam.bias.data = bias
         for para in self.parameters():
             para.detach_()
-        self.__delattr__('rbr_dense')
-        self.__delattr__('rbr_1x1')
-        if hasattr(self, 'rbr_identity'):
-            self.__delattr__('rbr_identity')
-        if hasattr(self, 'id_tensor'):
-            self.__delattr__('id_tensor')
+        self.__delattr__("rbr_dense")
+        self.__delattr__("rbr_1x1")
+        if hasattr(self, "rbr_identity"):
+            self.__delattr__("rbr_identity")
+        if hasattr(self, "id_tensor"):
+            self.__delattr__("id_tensor")
         self.deploy = True
 
 
@@ -371,16 +396,17 @@ class BepC3StageBlock(nn.Module):
             Defaults to dict(type='ReLU', inplace=True).
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 num_blocks: int = 1,
-                 hidden_ratio: float = 0.5,
-                 concat_all_layer: bool = True,
-                 block_cfg: ConfigType = dict(type='RepVGGBlock'),
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.03, eps=0.001),
-                 act_cfg: ConfigType = dict(type='ReLU', inplace=True)):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        num_blocks: int = 1,
+        hidden_ratio: float = 0.5,
+        concat_all_layer: bool = True,
+        block_cfg: ConfigType = dict(type="RepVGGBlock"),
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="ReLU", inplace=True),
+    ):
         super().__init__()
         hidden_channels = int(out_channels * hidden_ratio)
 
@@ -392,7 +418,8 @@ class BepC3StageBlock(nn.Module):
             groups=1,
             bias=False,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
         self.conv2 = ConvModule(
             in_channels,
             hidden_channels,
@@ -401,7 +428,8 @@ class BepC3StageBlock(nn.Module):
             groups=1,
             bias=False,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
         self.conv3 = ConvModule(
             2 * hidden_channels,
             out_channels,
@@ -410,13 +438,15 @@ class BepC3StageBlock(nn.Module):
             groups=1,
             bias=False,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
         self.block = RepStageBlock(
             in_channels=hidden_channels,
             out_channels=hidden_channels,
             num_blocks=num_blocks,
             block_cfg=block_cfg,
-            bottle_block=BottleRep)
+            bottle_block=BottleRep,
+        )
         self.concat_all_layer = concat_all_layer
         if not concat_all_layer:
             self.conv3 = ConvModule(
@@ -427,12 +457,14 @@ class BepC3StageBlock(nn.Module):
                 groups=1,
                 bias=False,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg)
+                act_cfg=act_cfg,
+            )
 
     def forward(self, x):
         if self.concat_all_layer is True:
             return self.conv3(
-                torch.cat((self.block(self.conv1(x)), self.conv2(x)), dim=1))
+                torch.cat((self.block(self.conv1(x)), self.conv2(x)), dim=1)
+            )
         else:
             return self.conv3(self.block(self.conv1(x)))
 
@@ -449,19 +481,19 @@ class BottleRep(nn.Module):
             Defaults False.
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 block_cfg: ConfigType = dict(type='RepVGGBlock'),
-                 adaptive_weight: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        block_cfg: ConfigType = dict(type="RepVGGBlock"),
+        adaptive_weight: bool = False,
+    ):
         super().__init__()
         conv1_cfg = block_cfg.copy()
         conv2_cfg = block_cfg.copy()
 
-        conv1_cfg.update(
-            dict(in_channels=in_channels, out_channels=out_channels))
-        conv2_cfg.update(
-            dict(in_channels=out_channels, out_channels=out_channels))
+        conv1_cfg.update(dict(in_channels=in_channels, out_channels=out_channels))
+        conv2_cfg.update(dict(in_channels=out_channels, out_channels=out_channels))
 
         self.conv1 = MODELS.build(conv1_cfg)
         self.conv2 = MODELS.build(conv2_cfg)
@@ -499,15 +531,17 @@ class ConvWrapper(nn.Module):
             Defaults to dict(type='ReLU', inplace=True).
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: int = 3,
-                 stride: int = 1,
-                 groups: int = 1,
-                 bias: bool = True,
-                 norm_cfg: ConfigType = None,
-                 act_cfg: ConfigType = dict(type='SiLU')):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 3,
+        stride: int = 1,
+        groups: int = 1,
+        bias: bool = True,
+        norm_cfg: ConfigType = None,
+        act_cfg: ConfigType = dict(type="SiLU"),
+    ):
         super().__init__()
         self.block = ConvModule(
             in_channels,
@@ -518,7 +552,8 @@ class ConvWrapper(nn.Module):
             groups=groups,
             bias=bias,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         return self.block(x)
@@ -539,9 +574,7 @@ class EffectiveSELayer(nn.Module):
             Defaults to dict(type='HSigmoid').
     """
 
-    def __init__(self,
-                 channels: int,
-                 act_cfg: ConfigType = dict(type='HSigmoid')):
+    def __init__(self, channels: int, act_cfg: ConfigType = dict(type="HSigmoid")):
         super().__init__()
         assert isinstance(act_cfg, dict)
         self.fc = ConvModule(channels, channels, 1, act_cfg=None)
@@ -551,9 +584,9 @@ class EffectiveSELayer(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         """Forward process
-         Args:
-             x (Tensor): The input tensor.
-         """
+        Args:
+            x (Tensor): The input tensor.
+        """
         x_se = x.mean((2, 3), keepdim=True)
         x_se = self.fc(x_se)
         return x * self.activate(x_se)
@@ -576,20 +609,18 @@ class PPYOLOESELayer(nn.Module):
             Defaults to dict(type='SiLU', inplace=True).
     """
 
-    def __init__(self,
-                 feat_channels: int,
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.1, eps=1e-5),
-                 act_cfg: ConfigType = dict(type='SiLU', inplace=True)):
+    def __init__(
+        self,
+        feat_channels: int,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.1, eps=1e-5),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+    ):
         super().__init__()
         self.fc = nn.Conv2d(feat_channels, feat_channels, 1)
         self.sig = nn.Sigmoid()
         self.conv = ConvModule(
-            feat_channels,
-            feat_channels,
-            1,
-            norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            feat_channels, feat_channels, 1, norm_cfg=norm_cfg, act_cfg=act_cfg
+        )
 
         self._init_weights()
 
@@ -599,10 +630,10 @@ class PPYOLOESELayer(nn.Module):
 
     def forward(self, feat: Tensor, avg_feat: Tensor) -> Tensor:
         """Forward process
-         Args:
-             feat (Tensor): The input tensor.
-             avg_feat (Tensor): Average pooling feature tensor.
-         """
+        Args:
+            feat (Tensor): The input tensor.
+            avg_feat (Tensor): Average pooling feature tensor.
+        """
         weight = self.sig(self.fc(avg_feat))
         return self.conv(feat * weight)
 
@@ -632,26 +663,26 @@ class ELANBlock(BaseModule):
             Defaults to None.
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 middle_ratio: float,
-                 block_ratio: float,
-                 num_blocks: int = 2,
-                 num_convs_in_block: int = 1,
-                 conv_cfg: OptConfigType = None,
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.03, eps=0.001),
-                 act_cfg: ConfigType = dict(type='SiLU', inplace=True),
-                 init_cfg: OptMultiConfig = None):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        middle_ratio: float,
+        block_ratio: float,
+        num_blocks: int = 2,
+        num_convs_in_block: int = 1,
+        conv_cfg: OptConfigType = None,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+        init_cfg: OptMultiConfig = None,
+    ):
         super().__init__(init_cfg=init_cfg)
         assert num_blocks >= 1
         assert num_convs_in_block >= 1
 
         middle_channels = int(in_channels * middle_ratio)
         block_channels = int(in_channels * block_ratio)
-        final_conv_in_channels = int(
-            num_blocks * block_channels) + 2 * middle_channels
+        final_conv_in_channels = int(num_blocks * block_channels) + 2 * middle_channels
 
         self.main_conv = ConvModule(
             in_channels,
@@ -659,7 +690,8 @@ class ELANBlock(BaseModule):
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
         self.short_conv = ConvModule(
             in_channels,
@@ -667,7 +699,8 @@ class ELANBlock(BaseModule):
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
         self.blocks = nn.ModuleList()
         for _ in range(num_blocks):
@@ -679,7 +712,8 @@ class ELANBlock(BaseModule):
                     padding=1,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
-                    act_cfg=act_cfg)
+                    act_cfg=act_cfg,
+                )
             else:
                 internal_block = []
                 for _ in range(num_convs_in_block):
@@ -691,7 +725,9 @@ class ELANBlock(BaseModule):
                             padding=1,
                             conv_cfg=conv_cfg,
                             norm_cfg=norm_cfg,
-                            act_cfg=act_cfg))
+                            act_cfg=act_cfg,
+                        )
+                    )
                     middle_channels = block_channels
                 internal_block = nn.Sequential(*internal_block)
 
@@ -704,13 +740,14 @@ class ELANBlock(BaseModule):
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         """Forward process
-         Args:
-             x (Tensor): The input tensor.
-         """
+        Args:
+            x (Tensor): The input tensor.
+        """
         x_short = self.short_conv(x)
         x_main = self.main_conv(x)
         block_outs = []
@@ -764,31 +801,34 @@ class MaxPoolAndStrideConvBlock(BaseModule):
             Defaults to None.
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 maxpool_kernel_sizes: int = 2,
-                 use_in_channels_of_middle: bool = False,
-                 conv_cfg: OptConfigType = None,
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.03, eps=0.001),
-                 act_cfg: ConfigType = dict(type='SiLU', inplace=True),
-                 init_cfg: OptMultiConfig = None):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        maxpool_kernel_sizes: int = 2,
+        use_in_channels_of_middle: bool = False,
+        conv_cfg: OptConfigType = None,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+        init_cfg: OptMultiConfig = None,
+    ):
         super().__init__(init_cfg=init_cfg)
 
-        middle_channels = in_channels if use_in_channels_of_middle \
-            else out_channels // 2
+        middle_channels = (
+            in_channels if use_in_channels_of_middle else out_channels // 2
+        )
 
         self.maxpool_branches = nn.Sequential(
-            MaxPool2d(
-                kernel_size=maxpool_kernel_sizes, stride=maxpool_kernel_sizes),
+            MaxPool2d(kernel_size=maxpool_kernel_sizes, stride=maxpool_kernel_sizes),
             ConvModule(
                 in_channels,
                 out_channels // 2,
                 1,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg))
+                act_cfg=act_cfg,
+            ),
+        )
 
         self.stride_conv_branches = nn.Sequential(
             ConvModule(
@@ -797,7 +837,8 @@ class MaxPoolAndStrideConvBlock(BaseModule):
                 1,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg),
+                act_cfg=act_cfg,
+            ),
             ConvModule(
                 middle_channels,
                 out_channels // 2,
@@ -806,7 +847,9 @@ class MaxPoolAndStrideConvBlock(BaseModule):
                 padding=1,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg))
+                act_cfg=act_cfg,
+            ),
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         """Forward process
@@ -840,15 +883,16 @@ class TinyDownSampleBlock(BaseModule):
     """
 
     def __init__(
-            self,
-            in_channels: int,
-            out_channels: int,
-            middle_ratio: float = 1.0,
-            kernel_sizes: Union[int, Sequence[int]] = 3,
-            conv_cfg: OptConfigType = None,
-            norm_cfg: ConfigType = dict(type='BN', momentum=0.03, eps=0.001),
-            act_cfg: ConfigType = dict(type='LeakyReLU', negative_slope=0.1),
-            init_cfg: OptMultiConfig = None):
+        self,
+        in_channels: int,
+        out_channels: int,
+        middle_ratio: float = 1.0,
+        kernel_sizes: Union[int, Sequence[int]] = 3,
+        conv_cfg: OptConfigType = None,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="LeakyReLU", negative_slope=0.1),
+        init_cfg: OptMultiConfig = None,
+    ):
         super().__init__(init_cfg)
 
         middle_channels = int(in_channels * middle_ratio)
@@ -859,7 +903,8 @@ class TinyDownSampleBlock(BaseModule):
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
         self.main_convs = nn.ModuleList()
         for i in range(3):
@@ -871,7 +916,9 @@ class TinyDownSampleBlock(BaseModule):
                         1,
                         conv_cfg=conv_cfg,
                         norm_cfg=norm_cfg,
-                        act_cfg=act_cfg))
+                        act_cfg=act_cfg,
+                    )
+                )
             else:
                 self.main_convs.append(
                     ConvModule(
@@ -881,7 +928,9 @@ class TinyDownSampleBlock(BaseModule):
                         padding=(kernel_sizes - 1) // 2,
                         conv_cfg=conv_cfg,
                         norm_cfg=norm_cfg,
-                        act_cfg=act_cfg))
+                        act_cfg=act_cfg,
+                    )
+                )
 
         self.final_conv = ConvModule(
             middle_channels * 4,
@@ -889,7 +938,8 @@ class TinyDownSampleBlock(BaseModule):
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
     def forward(self, x) -> Tensor:
         short_out = self.short_conv(x)
@@ -906,38 +956,39 @@ class TinyDownSampleBlock(BaseModule):
 @MODELS.register_module()
 class SPPFCSPBlock(BaseModule):
     """Spatial pyramid pooling - Fast (SPPF) layer with CSP for
-     YOLOv7
+    YOLOv7
 
-     Args:
-         in_channels (int): The input channels of this Module.
-         out_channels (int): The output channels of this Module.
-         expand_ratio (float): Expand ratio of SPPCSPBlock.
-            Defaults to 0.5.
-         kernel_sizes (int, tuple[int]): Sequential or number of kernel
-             sizes of pooling layers. Defaults to 5.
-         is_tiny_version (bool): Is tiny version of SPPFCSPBlock. If True,
-            it means it is a yolov7 tiny model. Defaults to False.
-         conv_cfg (dict): Config dict for convolution layer. Defaults to None.
-             which means using conv2d. Defaults to None.
-         norm_cfg (dict): Config dict for normalization layer.
-             Defaults to dict(type='BN', momentum=0.03, eps=0.001).
-         act_cfg (dict): Config dict for activation layer.
-             Defaults to dict(type='SiLU', inplace=True).
-         init_cfg (dict or list[dict], optional): Initialization config dict.
-             Defaults to None.
-     """
+    Args:
+        in_channels (int): The input channels of this Module.
+        out_channels (int): The output channels of this Module.
+        expand_ratio (float): Expand ratio of SPPCSPBlock.
+           Defaults to 0.5.
+        kernel_sizes (int, tuple[int]): Sequential or number of kernel
+            sizes of pooling layers. Defaults to 5.
+        is_tiny_version (bool): Is tiny version of SPPFCSPBlock. If True,
+           it means it is a yolov7 tiny model. Defaults to False.
+        conv_cfg (dict): Config dict for convolution layer. Defaults to None.
+            which means using conv2d. Defaults to None.
+        norm_cfg (dict): Config dict for normalization layer.
+            Defaults to dict(type='BN', momentum=0.03, eps=0.001).
+        act_cfg (dict): Config dict for activation layer.
+            Defaults to dict(type='SiLU', inplace=True).
+        init_cfg (dict or list[dict], optional): Initialization config dict.
+            Defaults to None.
+    """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 expand_ratio: float = 0.5,
-                 kernel_sizes: Union[int, Sequence[int]] = 5,
-                 is_tiny_version: bool = False,
-                 conv_cfg: OptConfigType = None,
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.03, eps=0.001),
-                 act_cfg: ConfigType = dict(type='SiLU', inplace=True),
-                 init_cfg: OptMultiConfig = None):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        expand_ratio: float = 0.5,
+        kernel_sizes: Union[int, Sequence[int]] = 5,
+        is_tiny_version: bool = False,
+        conv_cfg: OptConfigType = None,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+        init_cfg: OptMultiConfig = None,
+    ):
         super().__init__(init_cfg=init_cfg)
         self.is_tiny_version = is_tiny_version
 
@@ -950,7 +1001,8 @@ class SPPFCSPBlock(BaseModule):
                 1,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg)
+                act_cfg=act_cfg,
+            )
         else:
             self.main_layers = nn.Sequential(
                 ConvModule(
@@ -959,7 +1011,8 @@ class SPPFCSPBlock(BaseModule):
                     1,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
-                    act_cfg=act_cfg),
+                    act_cfg=act_cfg,
+                ),
                 ConvModule(
                     mid_channels,
                     mid_channels,
@@ -967,25 +1020,30 @@ class SPPFCSPBlock(BaseModule):
                     padding=1,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
-                    act_cfg=act_cfg),
+                    act_cfg=act_cfg,
+                ),
                 ConvModule(
                     mid_channels,
                     mid_channels,
                     1,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
-                    act_cfg=act_cfg),
+                    act_cfg=act_cfg,
+                ),
             )
 
         self.kernel_sizes = kernel_sizes
         if isinstance(kernel_sizes, int):
             self.poolings = nn.MaxPool2d(
-                kernel_size=kernel_sizes, stride=1, padding=kernel_sizes // 2)
+                kernel_size=kernel_sizes, stride=1, padding=kernel_sizes // 2
+            )
         else:
-            self.poolings = nn.ModuleList([
-                nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks // 2)
-                for ks in kernel_sizes
-            ])
+            self.poolings = nn.ModuleList(
+                [
+                    nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks // 2)
+                    for ks in kernel_sizes
+                ]
+            )
 
         if is_tiny_version:
             self.fuse_layers = ConvModule(
@@ -994,7 +1052,8 @@ class SPPFCSPBlock(BaseModule):
                 1,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg)
+                act_cfg=act_cfg,
+            )
         else:
             self.fuse_layers = nn.Sequential(
                 ConvModule(
@@ -1003,7 +1062,8 @@ class SPPFCSPBlock(BaseModule):
                     1,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
-                    act_cfg=act_cfg),
+                    act_cfg=act_cfg,
+                ),
                 ConvModule(
                     mid_channels,
                     mid_channels,
@@ -1011,7 +1071,9 @@ class SPPFCSPBlock(BaseModule):
                     padding=1,
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
-                    act_cfg=act_cfg))
+                    act_cfg=act_cfg,
+                ),
+            )
 
         self.short_layer = ConvModule(
             in_channels,
@@ -1019,7 +1081,8 @@ class SPPFCSPBlock(BaseModule):
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
         self.final_conv = ConvModule(
             2 * mid_channels,
@@ -1027,7 +1090,8 @@ class SPPFCSPBlock(BaseModule):
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
     def forward(self, x) -> Tensor:
         """Forward process
@@ -1063,7 +1127,7 @@ class ImplicitA(nn.Module):
         std (float): Std value of implicit module. Defaults to 0.02
     """
 
-    def __init__(self, in_channels: int, mean: float = 0., std: float = .02):
+    def __init__(self, in_channels: int, mean: float = 0.0, std: float = 0.02):
         super().__init__()
         self.implicit = nn.Parameter(torch.zeros(1, in_channels, 1, 1))
         nn.init.normal_(self.implicit, mean=mean, std=std)
@@ -1085,7 +1149,7 @@ class ImplicitM(nn.Module):
         std (float): Std value of implicit module. Defaults to 0.02.
     """
 
-    def __init__(self, in_channels: int, mean: float = 1., std: float = .02):
+    def __init__(self, in_channels: int, mean: float = 1.0, std: float = 0.02):
         super().__init__()
         self.implicit = nn.Parameter(torch.ones(1, in_channels, 1, 1))
         nn.init.normal_(self.implicit, mean=mean, std=std)
@@ -1114,14 +1178,15 @@ class PPYOLOEBasicBlock(nn.Module):
          use_alpha (bool): Whether to use `alpha` parameter at 1x1 conv.
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.1, eps=1e-5),
-                 act_cfg: ConfigType = dict(type='SiLU', inplace=True),
-                 shortcut: bool = True,
-                 use_alpha: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.1, eps=1e-5),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+        shortcut: bool = True,
+        use_alpha: bool = False,
+    ):
         super().__init__()
         assert act_cfg is None or isinstance(act_cfg, dict)
         self.conv1 = ConvModule(
@@ -1131,7 +1196,8 @@ class PPYOLOEBasicBlock(nn.Module):
             stride=1,
             padding=1,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
         self.conv2 = RepVGGBlock(
             out_channels,
@@ -1139,7 +1205,8 @@ class PPYOLOEBasicBlock(nn.Module):
             use_alpha=use_alpha,
             act_cfg=act_cfg,
             norm_cfg=norm_cfg,
-            use_bn_first=False)
+            use_bn_first=False,
+        )
         self.shortcut = shortcut
 
     def forward(self, x: Tensor) -> Tensor:
@@ -1184,19 +1251,22 @@ class CSPResLayer(nn.Module):
             Defaults to False.
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 num_block: int,
-                 block_cfg: ConfigType = dict(
-                     type='PPYOLOEBasicBlock', shortcut=True, use_alpha=True),
-                 stride: int = 1,
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.1, eps=1e-5),
-                 act_cfg: ConfigType = dict(type='SiLU', inplace=True),
-                 attention_cfg: OptMultiConfig = dict(
-                     type='EffectiveSELayer', act_cfg=dict(type='HSigmoid')),
-                 use_spp: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        num_block: int,
+        block_cfg: ConfigType = dict(
+            type="PPYOLOEBasicBlock", shortcut=True, use_alpha=True
+        ),
+        stride: int = 1,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.1, eps=1e-5),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+        attention_cfg: OptMultiConfig = dict(
+            type="EffectiveSELayer", act_cfg=dict(type="HSigmoid")
+        ),
+        use_spp: bool = False,
+    ):
         super().__init__()
 
         self.num_block = num_block
@@ -1208,7 +1278,8 @@ class CSPResLayer(nn.Module):
 
         if stride == 2:
             conv1_in_channels = conv2_in_channels = conv3_in_channels = (
-                in_channels + out_channels) // 2
+                in_channels + out_channels
+            ) // 2
             blocks_channels = conv1_in_channels // 2
             self.conv_down = ConvModule(
                 in_channels,
@@ -1217,7 +1288,8 @@ class CSPResLayer(nn.Module):
                 stride=2,
                 padding=1,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg)
+                act_cfg=act_cfg,
+            )
         else:
             conv1_in_channels = conv2_in_channels = in_channels
             conv3_in_channels = out_channels
@@ -1225,31 +1297,22 @@ class CSPResLayer(nn.Module):
             self.conv_down = None
 
         self.conv1 = ConvModule(
-            conv1_in_channels,
-            blocks_channels,
-            1,
-            norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            conv1_in_channels, blocks_channels, 1, norm_cfg=norm_cfg, act_cfg=act_cfg
+        )
 
         self.conv2 = ConvModule(
-            conv2_in_channels,
-            blocks_channels,
-            1,
-            norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            conv2_in_channels, blocks_channels, 1, norm_cfg=norm_cfg, act_cfg=act_cfg
+        )
 
         self.blocks = self.build_blocks_layer(blocks_channels)
 
         self.conv3 = ConvModule(
-            conv3_in_channels,
-            out_channels,
-            1,
-            norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            conv3_in_channels, out_channels, 1, norm_cfg=norm_cfg, act_cfg=act_cfg
+        )
 
         if attention_cfg:
             attention_cfg = attention_cfg.copy()
-            attention_cfg['channels'] = blocks_channels * 2
+            attention_cfg["channels"] = blocks_channels * 2
             self.attn = MODELS.build(attention_cfg)
         else:
             self.attn = None
@@ -1263,16 +1326,17 @@ class CSPResLayer(nn.Module):
         blocks = nn.Sequential()
         block_cfg = self.block_cfg.copy()
         block_cfg.update(
-            dict(in_channels=blocks_channels, out_channels=blocks_channels))
-        block_cfg.setdefault('norm_cfg', self.norm_cfg)
-        block_cfg.setdefault('act_cfg', self.act_cfg)
+            dict(in_channels=blocks_channels, out_channels=blocks_channels)
+        )
+        block_cfg.setdefault("norm_cfg", self.norm_cfg)
+        block_cfg.setdefault("act_cfg", self.act_cfg)
 
         for i in range(self.num_block):
             blocks.add_module(str(i), MODELS.build(block_cfg))
 
             if i == (self.num_block - 1) // 2 and self.use_spp:
                 blocks.add_module(
-                    'spp',
+                    "spp",
                     SPPFBottleneck(
                         blocks_channels,
                         blocks_channels,
@@ -1280,15 +1344,17 @@ class CSPResLayer(nn.Module):
                         use_conv_first=False,
                         conv_cfg=None,
                         norm_cfg=self.norm_cfg,
-                        act_cfg=self.act_cfg))
+                        act_cfg=self.act_cfg,
+                    ),
+                )
 
         return blocks
 
     def forward(self, x: Tensor) -> Tensor:
         """Forward process
-         Args:
-             x (Tensor): The input tensor.
-         """
+        Args:
+            x (Tensor): The input tensor.
+        """
         if self.conv_down is not None:
             x = self.conv_down(x)
         y1 = self.conv1(x)
@@ -1314,42 +1380,47 @@ class RepStageBlock(nn.Module):
             Defaults to 'RepVGGBlock'.
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 num_blocks: int = 1,
-                 bottle_block: nn.Module = RepVGGBlock,
-                 block_cfg: ConfigType = dict(type='RepVGGBlock')):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        num_blocks: int = 1,
+        bottle_block: nn.Module = RepVGGBlock,
+        block_cfg: ConfigType = dict(type="RepVGGBlock"),
+    ):
         super().__init__()
         block_cfg = block_cfg.copy()
 
-        block_cfg.update(
-            dict(in_channels=in_channels, out_channels=out_channels))
+        block_cfg.update(dict(in_channels=in_channels, out_channels=out_channels))
 
         self.conv1 = MODELS.build(block_cfg)
 
-        block_cfg.update(
-            dict(in_channels=out_channels, out_channels=out_channels))
+        block_cfg.update(dict(in_channels=out_channels, out_channels=out_channels))
 
         self.block = None
         if num_blocks > 1:
-            self.block = nn.Sequential(*(MODELS.build(block_cfg)
-                                         for _ in range(num_blocks - 1)))
+            self.block = nn.Sequential(
+                *(MODELS.build(block_cfg) for _ in range(num_blocks - 1))
+            )
 
         if bottle_block == BottleRep:
             self.conv1 = BottleRep(
-                in_channels,
-                out_channels,
-                block_cfg=block_cfg,
-                adaptive_weight=True)
+                in_channels, out_channels, block_cfg=block_cfg, adaptive_weight=True
+            )
             num_blocks = num_blocks // 2
             self.block = None
             if num_blocks > 1:
-                self.block = nn.Sequential(*(BottleRep(
-                    out_channels,
-                    out_channels,
-                    block_cfg=block_cfg,
-                    adaptive_weight=True) for _ in range(num_blocks - 1)))
+                self.block = nn.Sequential(
+                    *(
+                        BottleRep(
+                            out_channels,
+                            out_channels,
+                            block_cfg=block_cfg,
+                            adaptive_weight=True,
+                        )
+                        for _ in range(num_blocks - 1)
+                    )
+                )
 
     def forward(self, x: Tensor) -> Tensor:
         """Forward process.
@@ -1399,19 +1470,20 @@ class DarknetBottleneck(MMDET_DarknetBottleneck):
             Defaults to dict(type='Swish').
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 expansion: float = 0.5,
-                 kernel_size: Sequence[int] = (1, 3),
-                 padding: Sequence[int] = (0, 1),
-                 add_identity: bool = True,
-                 use_depthwise: bool = False,
-                 conv_cfg: OptConfigType = None,
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.03, eps=0.001),
-                 act_cfg: ConfigType = dict(type='SiLU', inplace=True),
-                 init_cfg: OptMultiConfig = None) -> None:
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        expansion: float = 0.5,
+        kernel_size: Sequence[int] = (1, 3),
+        padding: Sequence[int] = (0, 1),
+        add_identity: bool = True,
+        use_depthwise: bool = False,
+        conv_cfg: OptConfigType = None,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+        init_cfg: OptMultiConfig = None,
+    ) -> None:
         super().__init__(in_channels, out_channels, init_cfg=init_cfg)
         hidden_channels = int(out_channels * expansion)
         conv = DepthwiseSeparableConvModule if use_depthwise else ConvModule
@@ -1424,7 +1496,8 @@ class DarknetBottleneck(MMDET_DarknetBottleneck):
             padding=padding[0],
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
         self.conv2 = conv(
             hidden_channels,
             out_channels,
@@ -1433,9 +1506,9 @@ class DarknetBottleneck(MMDET_DarknetBottleneck):
             padding=padding[1],
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
-        self.add_identity = \
-            add_identity and in_channels == out_channels
+            act_cfg=act_cfg,
+        )
+        self.add_identity = add_identity and in_channels == out_channels
 
 
 class CSPLayerWithTwoConv(BaseModule):
@@ -1461,16 +1534,17 @@ class CSPLayerWithTwoConv(BaseModule):
     """
 
     def __init__(
-            self,
-            in_channels: int,
-            out_channels: int,
-            expand_ratio: float = 0.5,
-            num_blocks: int = 1,
-            add_identity: bool = True,  # shortcut
-            conv_cfg: OptConfigType = None,
-            norm_cfg: ConfigType = dict(type='BN', momentum=0.03, eps=0.001),
-            act_cfg: ConfigType = dict(type='SiLU', inplace=True),
-            init_cfg: OptMultiConfig = None) -> None:
+        self,
+        in_channels: int,
+        out_channels: int,
+        expand_ratio: float = 0.5,
+        num_blocks: int = 1,
+        add_identity: bool = True,  # shortcut
+        conv_cfg: OptConfigType = None,
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+        init_cfg: OptMultiConfig = None,
+    ) -> None:
         super().__init__(init_cfg=init_cfg)
 
         self.mid_channels = int(out_channels * expand_ratio)
@@ -1480,14 +1554,16 @@ class CSPLayerWithTwoConv(BaseModule):
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
         self.final_conv = ConvModule(
             (2 + num_blocks) * self.mid_channels,
             out_channels,
             1,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
-            act_cfg=act_cfg)
+            act_cfg=act_cfg,
+        )
 
         self.blocks = nn.ModuleList(
             DarknetBottleneck(
@@ -1500,7 +1576,10 @@ class CSPLayerWithTwoConv(BaseModule):
                 use_depthwise=False,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
-                act_cfg=act_cfg) for _ in range(num_blocks))
+                act_cfg=act_cfg,
+            )
+            for _ in range(num_blocks)
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         """Forward process."""

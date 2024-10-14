@@ -9,7 +9,13 @@ from .yolov8_pafpn import YOLOv8PAFPN
 from .yolox_pafpn import YOLOXPAFPN
 
 __all__ = [
-    'YOLOv5PAFPN', 'BaseYOLONeck', 'YOLOv6RepPAFPN', 'YOLOXPAFPN',
-    'CSPNeXtPAFPN', 'YOLOv7PAFPN', 'PPYOLOECSPPAFPN', 'YOLOv6CSPRepPAFPN',
-    'YOLOv8PAFPN'
+    "YOLOv5PAFPN",
+    "BaseYOLONeck",
+    "YOLOv6RepPAFPN",
+    "YOLOXPAFPN",
+    "CSPNeXtPAFPN",
+    "YOLOv7PAFPN",
+    "PPYOLOECSPPAFPN",
+    "YOLOv6CSPRepPAFPN",
+    "YOLOv8PAFPN",
 ]
