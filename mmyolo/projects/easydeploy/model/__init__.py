@@ -2,4 +2,4 @@
 from .backendwrapper import ORTWrapper, TRTWrapper
 from .model import DeployModel
 
-__all__ = ['DeployModel', 'TRTWrapper', 'ORTWrapper']
+__all__ = ["DeployModel", "TRTWrapper", "ORTWrapper"]

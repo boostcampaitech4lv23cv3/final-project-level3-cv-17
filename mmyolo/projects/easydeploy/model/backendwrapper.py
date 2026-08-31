@@ -6,28 +6,27 @@ from typing import List, Optional, Union
 
 import numpy as np
 import onnxruntime
+import torch
 
 try:
     import tensorrt as trt
 except Exception:
     trt = None
-import torch
 
-warnings.filterwarnings(action='ignore', category=DeprecationWarning)
+warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 
 
 class TRTWrapper(torch.nn.Module):
     dtype_mapping = {}
 
-    def __init__(self, weight: Union[str, Path],
-                 device: Optional[torch.device]):
+    def __init__(self, weight: Union[str, Path], device: Optional[torch.device]):
         super().__init__()
         weight = Path(weight) if isinstance(weight, str) else weight
-        assert weight.exists() and weight.suffix in ('.engine', '.plan')
+        assert weight.exists() and weight.suffix in (".engine", ".plan")
         if isinstance(device, str):
             device = torch.device(device)
         elif isinstance(device, int):
-            device = torch.device(f'cuda:{device}')
+            device = torch.device(f"cuda:{device}")
         self.weight = weight
         self.device = device
         self.stream = torch.cuda.Stream(device=device)
@@ -36,18 +35,20 @@ class TRTWrapper(torch.nn.Module):
         self.__init_bindings()
 
     def __update_mapping(self):
-        self.dtype_mapping.update({
-            trt.bool: torch.bool,
-            trt.int8: torch.int8,
-            trt.int32: torch.int32,
-            trt.float16: torch.float16,
-            trt.float32: torch.float32
-        })
+        self.dtype_mapping.update(
+            {
+                trt.bool: torch.bool,
+                trt.int8: torch.int8,
+                trt.int32: torch.int32,
+                trt.float16: torch.float16,
+                trt.float32: torch.float32,
+            }
+        )
 
     def __init_engine(self):
         logger = trt.Logger(trt.Logger.ERROR)
         self.log = partial(logger.log, trt.Logger.ERROR)
-        trt.init_libnvinfer_plugins(logger, namespace='')
+        trt.init_libnvinfer_plugins(logger, namespace="")
         self.logger = logger
         with trt.Runtime(logger) as runtime:
             model = runtime.deserialize_cuda_engine(self.weight.read_bytes())
@@ -76,7 +77,7 @@ class TRTWrapper(torch.nn.Module):
         self.bindings: List[int] = [0] * self.num_bindings
 
     def __init_bindings(self):
-        Binding = namedtuple('Binding', ('name', 'dtype', 'shape'))
+        Binding = namedtuple("Binding", ("name", "dtype", "shape"))
         inputs_info = []
         outputs_info = []
 
@@ -104,15 +105,12 @@ class TRTWrapper(torch.nn.Module):
 
         assert len(inputs) == self.num_inputs
 
-        contiguous_inputs: List[torch.Tensor] = [
-            i.contiguous() for i in inputs
-        ]
+        contiguous_inputs: List[torch.Tensor] = [i.contiguous() for i in inputs]
 
         for i in range(self.num_inputs):
             self.bindings[i] = contiguous_inputs[i].data_ptr()
             if self.is_dynamic:
-                self.context.set_binding_shape(
-                    i, tuple(contiguous_inputs[i].shape))
+                self.context.set_binding_shape(i, tuple(contiguous_inputs[i].shape))
 
         # create output tensors
         outputs: List[torch.Tensor] = []
@@ -122,9 +120,8 @@ class TRTWrapper(torch.nn.Module):
             if self.is_dynamic:
                 shape = tuple(self.context.get_binding_shape(j))
                 output = torch.empty(
-                    size=shape,
-                    dtype=self.output_dtypes[i],
-                    device=self.device)
+                    size=shape, dtype=self.output_dtypes[i], device=self.device
+                )
 
             else:
                 output = self.output_tensor[i]
@@ -139,44 +136,40 @@ class TRTWrapper(torch.nn.Module):
 
 class ORTWrapper(torch.nn.Module):
 
-    def __init__(self, weight: Union[str, Path],
-                 device: Optional[torch.device]):
+    def __init__(self, weight: Union[str, Path], device: Optional[torch.device]):
         super().__init__()
         weight = Path(weight) if isinstance(weight, str) else weight
-        assert weight.exists() and weight.suffix == '.onnx'
+        assert weight.exists() and weight.suffix == ".onnx"
 
         if isinstance(device, str):
             device = torch.device(device)
         elif isinstance(device, int):
-            device = torch.device(f'cuda:{device}')
+            device = torch.device(f"cuda:{device}")
         self.weight = weight
         self.device = device
         self.__init_session()
         self.__init_bindings()
 
     def __init_session(self):
-        providers = ['CPUExecutionProvider']
-        if 'cuda' in self.device.type:
-            providers.insert(0, 'CUDAExecutionProvider')
+        providers = ["CPUExecutionProvider"]
+        if "cuda" in self.device.type:
+            providers.insert(0, "CUDAExecutionProvider")
 
-        session = onnxruntime.InferenceSession(
-            str(self.weight), providers=providers)
+        session = onnxruntime.InferenceSession(str(self.weight), providers=providers)
         self.session = session
 
     def __init_bindings(self):
-        Binding = namedtuple('Binding', ('name', 'dtype', 'shape'))
+        Binding = namedtuple("Binding", ("name", "dtype", "shape"))
         inputs_info = []
         outputs_info = []
         self.is_dynamic = False
         for i, tensor in enumerate(self.session.get_inputs()):
             if any(not isinstance(i, int) for i in tensor.shape):
                 self.is_dynamic = True
-            inputs_info.append(
-                Binding(tensor.name, tensor.type, tuple(tensor.shape)))
+            inputs_info.append(Binding(tensor.name, tensor.type, tuple(tensor.shape)))
 
         for i, tensor in enumerate(self.session.get_outputs()):
-            outputs_info.append(
-                Binding(tensor.name, tensor.type, tuple(tensor.shape)))
+            outputs_info.append(Binding(tensor.name, tensor.type, tuple(tensor.shape)))
         self.inputs_info = inputs_info
         self.outputs_info = outputs_info
         self.num_inputs = len(inputs_info)
@@ -194,9 +187,9 @@ class ORTWrapper(torch.nn.Module):
             for i in range(self.num_inputs):
                 assert contiguous_inputs[i].shape == self.inputs_info[i].shape
 
-        outputs = self.session.run([o.name for o in self.outputs_info], {
-            j.name: contiguous_inputs[i]
-            for i, j in enumerate(self.inputs_info)
-        })
+        outputs = self.session.run(
+            [o.name for o in self.outputs_info],
+            {j.name: contiguous_inputs[i] for i, j in enumerate(self.inputs_info)},
+        )
 
         return tuple(torch.from_numpy(o).to(self.device) for o in outputs)
