@@ -29,9 +29,9 @@ class TestCSPNeXtPAFPN(TestCase):
 
         # test depth-wise
         neck = CSPNeXtPAFPN(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            use_depthwise=True)
+            in_channels=in_channels, out_channels=out_channels, use_depthwise=True
+        )
 
         from mmcv.cnn.bricks import DepthwiseSeparableConvModule
+
         self.assertTrue(neck.conv, DepthwiseSeparableConvModule)

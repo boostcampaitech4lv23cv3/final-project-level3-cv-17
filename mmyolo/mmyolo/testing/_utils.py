@@ -14,10 +14,11 @@ def _get_config_directory():
     except NameError:
         # For IPython development when this __file__ is not defined
         import mmyolo
+
         repo_dpath = dirname(dirname(mmyolo.__file__))
-    config_dpath = join(repo_dpath, 'configs')
+    config_dpath = join(repo_dpath, "configs")
     if not exists(config_dpath):
-        raise Exception('Cannot find config path')
+        raise Exception("Cannot find config path")
     return config_dpath
 
 

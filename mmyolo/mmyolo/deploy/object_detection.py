@@ -8,7 +8,7 @@ from mmdeploy.utils import Codebase, Task
 from mmengine import Config
 from mmengine.registry import Registry
 
-MMYOLO_TASK = Registry('mmyolo_tasks')
+MMYOLO_TASK = Registry("mmyolo_tasks")
 
 
 @CODEBASE.register_module(Codebase.MMYOLO.value)
@@ -27,11 +27,13 @@ class MMYOLO(MMCodebase):
     @classmethod
     def register_all_modules(cls):
         """register all modules."""
-        from mmdet.utils.setup_env import \
-            register_all_modules as register_all_modules_mmdet
+        from mmdet.utils.setup_env import (
+            register_all_modules as register_all_modules_mmdet,
+        )
 
-        from mmyolo.utils.setup_env import \
-            register_all_modules as register_all_modules_mmyolo
+        from mmyolo.utils.setup_env import (
+            register_all_modules as register_all_modules_mmyolo,
+        )
 
         cls.register_deploy_modules()
         register_all_modules_mmyolo(True)
@@ -51,9 +53,7 @@ def _get_dataset_metainfo(model_cfg: Config):
     from mmyolo.registry import DATASETS
 
     module_dict = DATASETS.module_dict
-    for dataloader_name in [
-            'test_dataloader', 'val_dataloader', 'train_dataloader'
-    ]:
+    for dataloader_name in ["test_dataloader", "val_dataloader", "train_dataloader"]:
         if dataloader_name not in model_cfg:
             continue
         dataloader_cfg = model_cfg[dataloader_name]
@@ -61,13 +61,13 @@ def _get_dataset_metainfo(model_cfg: Config):
         dataset_cls = module_dict.get(dataset_cfg.type, None)
         if dataset_cls is None:
             continue
-        if hasattr(dataset_cls, '_load_metainfo') and isinstance(
-                dataset_cls._load_metainfo, Callable):
-            meta = dataset_cls._load_metainfo(
-                dataset_cfg.get('metainfo', None))
+        if hasattr(dataset_cls, "_load_metainfo") and isinstance(
+            dataset_cls._load_metainfo, Callable
+        ):
+            meta = dataset_cls._load_metainfo(dataset_cfg.get("metainfo", None))
             if meta is not None:
                 return meta
-        if hasattr(dataset_cls, 'METAINFO'):
+        if hasattr(dataset_cls, "METAINFO"):
             return dataset_cls.METAINFO
 
     return None
@@ -88,16 +88,19 @@ class YOLOObjectDetection(ObjectDetection):
             Visualizer: A visualizer instance.
         """
         from mmdet.visualization import DetLocalVisualizer  # noqa: F401,F403
+
         metainfo = _get_dataset_metainfo(self.model_cfg)
         visualizer = super().get_visualizer(name, save_dir)
         if metainfo is not None:
             visualizer.dataset_meta = metainfo
         return visualizer
 
-    def build_pytorch_model(self,
-                            model_checkpoint: Optional[str] = None,
-                            cfg_options: Optional[Dict] = None,
-                            **kwargs) -> torch.nn.Module:
+    def build_pytorch_model(
+        self,
+        model_checkpoint: Optional[str] = None,
+        cfg_options: Optional[Dict] = None,
+        **kwargs,
+    ) -> torch.nn.Module:
         """Initialize torch model.
 
         Args:
@@ -116,13 +119,13 @@ class YOLOObjectDetection(ObjectDetection):
         from mmyolo.utils import switch_to_deploy
 
         model = deepcopy(self.model_cfg.model)
-        preprocess_cfg = deepcopy(self.model_cfg.get('preprocess_cfg', {}))
-        preprocess_cfg.update(
-            deepcopy(self.model_cfg.get('data_preprocessor', {})))
-        model.setdefault('data_preprocessor', preprocess_cfg)
+        preprocess_cfg = deepcopy(self.model_cfg.get("preprocess_cfg", {}))
+        preprocess_cfg.update(deepcopy(self.model_cfg.get("data_preprocessor", {})))
+        model.setdefault("data_preprocessor", preprocess_cfg)
         model = MODELS.build(model)
         if model_checkpoint is not None:
             from mmengine.runner.checkpoint import load_checkpoint
+
             load_checkpoint(model, model_checkpoint, map_location=self.device)
 
         model = revert_sync_batchnorm(model)
