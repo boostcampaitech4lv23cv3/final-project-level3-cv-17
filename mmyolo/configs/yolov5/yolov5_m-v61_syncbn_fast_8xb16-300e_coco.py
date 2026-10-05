@@ -1,4 +1,4 @@
-_base_ = './yolov5_s-v61_syncbn_fast_8xb16-300e_coco.py'
+_base_ = "./yolov5_s-v61_syncbn_fast_8xb16-300e_coco.py"
 
 deepen_factor = 0.67
 widen_factor = 0.75
@@ -20,54 +20,63 @@ model = dict(
     ),
     bbox_head=dict(
         head_module=dict(widen_factor=widen_factor),
-        loss_cls=dict(loss_weight=0.3 *
-                      (num_classes / 80 * 3 / num_det_layers)),
-        loss_obj=dict(loss_weight=0.7 *
-                      ((img_scale[0] / 640)**2 * 3 / num_det_layers))))
+        loss_cls=dict(loss_weight=0.3 * (num_classes / 80 * 3 / num_det_layers)),
+        loss_obj=dict(
+            loss_weight=0.7 * ((img_scale[0] / 640) ** 2 * 3 / num_det_layers)
+        ),
+    ),
+)
 
 pre_transform = _base_.pre_transform
 albu_train_transforms = _base_.albu_train_transforms
 
 mosaic_affine_pipeline = [
     dict(
-        type='Mosaic',
-        img_scale=img_scale,
-        pad_val=114.0,
-        pre_transform=pre_transform),
+        type="Mosaic", img_scale=img_scale, pad_val=114.0, pre_transform=pre_transform
+    ),
     dict(
-        type='YOLOv5RandomAffine',
+        type="YOLOv5RandomAffine",
         max_rotate_degree=0.0,
         max_shear_degree=0.0,
         scaling_ratio_range=(1 - affine_scale, 1 + affine_scale),
         # img_scale is (width, height)
         border=(-img_scale[0] // 2, -img_scale[1] // 2),
-        border_val=(114, 114, 114))
+        border_val=(114, 114, 114),
+    ),
 ]
 
 # enable mixup
 train_pipeline = [
-    *pre_transform, *mosaic_affine_pipeline,
+    *pre_transform,
+    *mosaic_affine_pipeline,
     dict(
-        type='YOLOv5MixUp',
+        type="YOLOv5MixUp",
         prob=0.1,
-        pre_transform=[*pre_transform, *mosaic_affine_pipeline]),
+        pre_transform=[*pre_transform, *mosaic_affine_pipeline],
+    ),
     dict(
-        type='mmdet.Albu',
+        type="mmdet.Albu",
         transforms=albu_train_transforms,
         bbox_params=dict(
-            type='BboxParams',
-            format='pascal_voc',
-            label_fields=['gt_bboxes_labels', 'gt_ignore_flags']),
-        keymap={
-            'img': 'image',
-            'gt_bboxes': 'bboxes'
-        }),
-    dict(type='YOLOv5HSVRandomAug'),
-    dict(type='mmdet.RandomFlip', prob=0.5),
+            type="BboxParams",
+            format="pascal_voc",
+            label_fields=["gt_bboxes_labels", "gt_ignore_flags"],
+        ),
+        keymap={"img": "image", "gt_bboxes": "bboxes"},
+    ),
+    dict(type="YOLOv5HSVRandomAug"),
+    dict(type="mmdet.RandomFlip", prob=0.5),
     dict(
-        type='mmdet.PackDetInputs',
-        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape', 'flip',
-                   'flip_direction'))
+        type="mmdet.PackDetInputs",
+        meta_keys=(
+            "img_id",
+            "img_path",
+            "ori_shape",
+            "img_shape",
+            "flip",
+            "flip_direction",
+        ),
+    ),
 ]
 
 train_dataloader = dict(dataset=dict(pipeline=train_pipeline))

@@ -6,13 +6,19 @@ import torch.nn as nn
 from mmcv.cnn import ConvModule, is_norm
 from mmdet.models.task_modules.samplers import PseudoSampler
 from mmdet.structures.bbox import distance2bbox
-from mmdet.utils import (ConfigType, InstanceList, OptConfigType,
-                         OptInstanceList, OptMultiConfig, reduce_mean)
-from mmengine.model import (BaseModule, bias_init_with_prob, constant_init,
-                            normal_init)
+from mmdet.utils import (
+    ConfigType,
+    InstanceList,
+    OptConfigType,
+    OptInstanceList,
+    OptMultiConfig,
+    reduce_mean,
+)
+from mmengine.model import BaseModule, bias_init_with_prob, constant_init, normal_init
 from torch import Tensor
 
 from mmyolo.registry import MODELS, TASK_UTILS
+
 from .yolov5_head import YOLOv5Head
 
 
@@ -60,8 +66,8 @@ class RTMDetSepBNHeadModule(BaseModule):
         share_conv: bool = True,
         pred_kernel_size: int = 1,
         conv_cfg: OptConfigType = None,
-        norm_cfg: ConfigType = dict(type='BN'),
-        act_cfg: ConfigType = dict(type='SiLU', inplace=True),
+        norm_cfg: ConfigType = dict(type="BN"),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
         init_cfg: OptMultiConfig = None,
     ):
         super().__init__(init_cfg=init_cfg)
@@ -102,7 +108,9 @@ class RTMDetSepBNHeadModule(BaseModule):
                         padding=1,
                         conv_cfg=self.conv_cfg,
                         norm_cfg=self.norm_cfg,
-                        act_cfg=self.act_cfg))
+                        act_cfg=self.act_cfg,
+                    )
+                )
                 reg_convs.append(
                     ConvModule(
                         chn,
@@ -112,7 +120,9 @@ class RTMDetSepBNHeadModule(BaseModule):
                         padding=1,
                         conv_cfg=self.conv_cfg,
                         norm_cfg=self.norm_cfg,
-                        act_cfg=self.act_cfg))
+                        act_cfg=self.act_cfg,
+                    )
+                )
             self.cls_convs.append(cls_convs)
             self.reg_convs.append(reg_convs)
 
@@ -121,13 +131,17 @@ class RTMDetSepBNHeadModule(BaseModule):
                     self.feat_channels,
                     self.num_base_priors * self.num_classes,
                     self.pred_kernel_size,
-                    padding=self.pred_kernel_size // 2))
+                    padding=self.pred_kernel_size // 2,
+                )
+            )
             self.rtm_reg.append(
                 nn.Conv2d(
                     self.feat_channels,
                     self.num_base_priors * 4,
                     self.pred_kernel_size,
-                    padding=self.pred_kernel_size // 2))
+                    padding=self.pred_kernel_size // 2,
+                )
+            )
 
         if self.share_conv:
             for n in range(len(self.featmap_strides)):
@@ -206,28 +220,27 @@ class RTMDetHead(YOLOv5Head):
             Defaults to None.
     """
 
-    def __init__(self,
-                 head_module: ConfigType,
-                 prior_generator: ConfigType = dict(
-                     type='mmdet.MlvlPointGenerator',
-                     offset=0,
-                     strides=[8, 16, 32]),
-                 bbox_coder: ConfigType = dict(type='DistancePointBBoxCoder'),
-                 loss_cls: ConfigType = dict(
-                     type='mmdet.QualityFocalLoss',
-                     use_sigmoid=True,
-                     beta=2.0,
-                     loss_weight=1.0),
-                 loss_bbox: ConfigType = dict(
-                     type='mmdet.GIoULoss', loss_weight=2.0),
-                 loss_obj: ConfigType = dict(
-                     type='mmdet.CrossEntropyLoss',
-                     use_sigmoid=True,
-                     reduction='sum',
-                     loss_weight=1.0),
-                 train_cfg: OptConfigType = None,
-                 test_cfg: OptConfigType = None,
-                 init_cfg: OptMultiConfig = None):
+    def __init__(
+        self,
+        head_module: ConfigType,
+        prior_generator: ConfigType = dict(
+            type="mmdet.MlvlPointGenerator", offset=0, strides=[8, 16, 32]
+        ),
+        bbox_coder: ConfigType = dict(type="DistancePointBBoxCoder"),
+        loss_cls: ConfigType = dict(
+            type="mmdet.QualityFocalLoss", use_sigmoid=True, beta=2.0, loss_weight=1.0
+        ),
+        loss_bbox: ConfigType = dict(type="mmdet.GIoULoss", loss_weight=2.0),
+        loss_obj: ConfigType = dict(
+            type="mmdet.CrossEntropyLoss",
+            use_sigmoid=True,
+            reduction="sum",
+            loss_weight=1.0,
+        ),
+        train_cfg: OptConfigType = None,
+        test_cfg: OptConfigType = None,
+        init_cfg: OptMultiConfig = None,
+    ):
 
         super().__init__(
             head_module=head_module,
@@ -238,9 +251,10 @@ class RTMDetHead(YOLOv5Head):
             loss_obj=loss_obj,
             train_cfg=train_cfg,
             test_cfg=test_cfg,
-            init_cfg=init_cfg)
+            init_cfg=init_cfg,
+        )
 
-        self.use_sigmoid_cls = loss_cls.get('use_sigmoid', False)
+        self.use_sigmoid_cls = loss_cls.get("use_sigmoid", False)
         if self.use_sigmoid_cls:
             self.cls_out_channels = self.num_classes
         else:
@@ -254,9 +268,10 @@ class RTMDetHead(YOLOv5Head):
         """
         if self.train_cfg:
             self.assigner = TASK_UTILS.build(self.train_cfg.assigner)
-            if self.train_cfg.get('sampler', None) is not None:
+            if self.train_cfg.get("sampler", None) is not None:
                 self.sampler = TASK_UTILS.build(
-                    self.train_cfg.sampler, default_args=dict(context=self))
+                    self.train_cfg.sampler, default_args=dict(context=self)
+                )
             else:
                 self.sampler = PseudoSampler(context=self)
 
@@ -276,12 +291,13 @@ class RTMDetHead(YOLOv5Head):
         return self.head_module(x)
 
     def loss_by_feat(
-            self,
-            cls_scores: List[Tensor],
-            bbox_preds: List[Tensor],
-            batch_gt_instances: InstanceList,
-            batch_img_metas: List[dict],
-            batch_gt_instances_ignore: OptInstanceList = None) -> dict:
+        self,
+        cls_scores: List[Tensor],
+        bbox_preds: List[Tensor],
+        batch_gt_instances: InstanceList,
+        batch_img_metas: List[dict],
+        batch_gt_instances_ignore: OptInstanceList = None,
+    ) -> dict:
         """Compute losses of the head.
 
         Args:
@@ -318,62 +334,73 @@ class RTMDetHead(YOLOv5Head):
         if featmap_sizes != self.featmap_sizes_train:
             self.featmap_sizes_train = featmap_sizes
             mlvl_priors_with_stride = self.prior_generator.grid_priors(
-                featmap_sizes, device=device, with_stride=True)
-            self.flatten_priors_train = torch.cat(
-                mlvl_priors_with_stride, dim=0)
+                featmap_sizes, device=device, with_stride=True
+            )
+            self.flatten_priors_train = torch.cat(mlvl_priors_with_stride, dim=0)
 
-        flatten_cls_scores = torch.cat([
-            cls_score.permute(0, 2, 3, 1).reshape(num_imgs, -1,
-                                                  self.cls_out_channels)
-            for cls_score in cls_scores
-        ], 1).contiguous()
+        flatten_cls_scores = torch.cat(
+            [
+                cls_score.permute(0, 2, 3, 1).reshape(
+                    num_imgs, -1, self.cls_out_channels
+                )
+                for cls_score in cls_scores
+            ],
+            1,
+        ).contiguous()
 
-        flatten_bboxes = torch.cat([
-            bbox_pred.permute(0, 2, 3, 1).reshape(num_imgs, -1, 4)
-            for bbox_pred in bbox_preds
-        ], 1)
-        flatten_bboxes = flatten_bboxes * self.flatten_priors_train[..., -1,
-                                                                    None]
-        flatten_bboxes = distance2bbox(self.flatten_priors_train[..., :2],
-                                       flatten_bboxes)
+        flatten_bboxes = torch.cat(
+            [
+                bbox_pred.permute(0, 2, 3, 1).reshape(num_imgs, -1, 4)
+                for bbox_pred in bbox_preds
+            ],
+            1,
+        )
+        flatten_bboxes = flatten_bboxes * self.flatten_priors_train[..., -1, None]
+        flatten_bboxes = distance2bbox(
+            self.flatten_priors_train[..., :2], flatten_bboxes
+        )
 
-        assigned_result = self.assigner(flatten_bboxes.detach(),
-                                        flatten_cls_scores.detach(),
-                                        self.flatten_priors_train, gt_labels,
-                                        gt_bboxes, pad_bbox_flag)
+        assigned_result = self.assigner(
+            flatten_bboxes.detach(),
+            flatten_cls_scores.detach(),
+            self.flatten_priors_train,
+            gt_labels,
+            gt_bboxes,
+            pad_bbox_flag,
+        )
 
-        labels = assigned_result['assigned_labels'].reshape(-1)
-        label_weights = assigned_result['assigned_labels_weights'].reshape(-1)
-        bbox_targets = assigned_result['assigned_bboxes'].reshape(-1, 4)
-        assign_metrics = assigned_result['assign_metrics'].reshape(-1)
+        labels = assigned_result["assigned_labels"].reshape(-1)
+        label_weights = assigned_result["assigned_labels_weights"].reshape(-1)
+        bbox_targets = assigned_result["assigned_bboxes"].reshape(-1, 4)
+        assign_metrics = assigned_result["assign_metrics"].reshape(-1)
         cls_preds = flatten_cls_scores.reshape(-1, self.num_classes)
         bbox_preds = flatten_bboxes.reshape(-1, 4)
 
         # FG cat_id: [0, num_classes -1], BG cat_id: num_classes
         bg_class_ind = self.num_classes
-        pos_inds = ((labels >= 0)
-                    & (labels < bg_class_ind)).nonzero().squeeze(1)
+        pos_inds = ((labels >= 0) & (labels < bg_class_ind)).nonzero().squeeze(1)
         avg_factor = reduce_mean(assign_metrics.sum()).clamp_(min=1).item()
 
         loss_cls = self.loss_cls(
-            cls_preds, (labels, assign_metrics),
-            label_weights,
-            avg_factor=avg_factor)
+            cls_preds, (labels, assign_metrics), label_weights, avg_factor=avg_factor
+        )
 
         if len(pos_inds) > 0:
             loss_bbox = self.loss_bbox(
                 bbox_preds[pos_inds],
                 bbox_targets[pos_inds],
                 weight=assign_metrics[pos_inds],
-                avg_factor=avg_factor)
+                avg_factor=avg_factor,
+            )
         else:
             loss_bbox = bbox_preds.sum() * 0
 
         return dict(loss_cls=loss_cls, loss_bbox=loss_bbox)
 
     @staticmethod
-    def gt_instances_preprocess(batch_gt_instances: Union[Tensor, Sequence],
-                                batch_size: int) -> Tensor:
+    def gt_instances_preprocess(
+        batch_gt_instances: Union[Tensor, Sequence], batch_size: int
+    ) -> Tensor:
         """Split batch_gt_instances with batch size, from [all_gt_bboxes, 6]
         to.
 
@@ -390,24 +417,24 @@ class RTMDetHead(YOLOv5Head):
         """
         if isinstance(batch_gt_instances, Sequence):
             max_gt_bbox_len = max(
-                [len(gt_instances) for gt_instances in batch_gt_instances])
+                [len(gt_instances) for gt_instances in batch_gt_instances]
+            )
             # fill [-1., 0., 0., 0., 0.] if some shape of
             # single batch not equal max_gt_bbox_len
             batch_instance_list = []
             for index, gt_instance in enumerate(batch_gt_instances):
                 bboxes = gt_instance.bboxes
                 labels = gt_instance.labels
-                batch_instance_list.append(
-                    torch.cat((labels[:, None], bboxes), dim=-1))
+                batch_instance_list.append(torch.cat((labels[:, None], bboxes), dim=-1))
 
                 if bboxes.shape[0] >= max_gt_bbox_len:
                     continue
 
-                fill_tensor = bboxes.new_full(
-                    [max_gt_bbox_len - bboxes.shape[0], 5], 0)
-                fill_tensor[:, 0] = -1.
+                fill_tensor = bboxes.new_full([max_gt_bbox_len - bboxes.shape[0], 5], 0)
+                fill_tensor[:, 0] = -1.0
                 batch_instance_list[index] = torch.cat(
-                    (batch_instance_list[-1], fill_tensor), dim=0)
+                    (batch_instance_list[-1], fill_tensor), dim=0
+                )
 
             return torch.stack(batch_instance_list)
         else:
@@ -417,8 +444,9 @@ class RTMDetHead(YOLOv5Head):
             batch_instance_list = []
             max_gt_bbox_len = 0
             for i in range(batch_size):
-                single_batch_instance = \
-                    batch_gt_instances[batch_gt_instances[:, 0] == i, :]
+                single_batch_instance = batch_gt_instances[
+                    batch_gt_instances[:, 0] == i, :
+                ]
                 single_batch_instance = single_batch_instance[:, 1:]
                 batch_instance_list.append(single_batch_instance)
                 if len(single_batch_instance) > max_gt_bbox_len:
@@ -430,9 +458,11 @@ class RTMDetHead(YOLOv5Head):
                 if gt_instance.shape[0] >= max_gt_bbox_len:
                     continue
                 fill_tensor = batch_gt_instances.new_full(
-                    [max_gt_bbox_len - gt_instance.shape[0], 5], 0)
-                fill_tensor[:, 0] = -1.
+                    [max_gt_bbox_len - gt_instance.shape[0], 5], 0
+                )
+                fill_tensor[:, 0] = -1.0
                 batch_instance_list[index] = torch.cat(
-                    (batch_instance_list[index], fill_tensor), dim=0)
+                    (batch_instance_list[index], fill_tensor), dim=0
+                )
 
             return torch.stack(batch_instance_list)
