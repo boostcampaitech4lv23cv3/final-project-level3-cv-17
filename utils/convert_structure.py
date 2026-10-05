@@ -59,6 +59,7 @@ References:
     - https://cocodataset.org/#format-data
 
 """
+
 import imghdr  # Deprecated since version 3.11, will be removed in version 3.13
 import json
 import os

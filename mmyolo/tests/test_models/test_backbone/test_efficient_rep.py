@@ -7,6 +7,7 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmyolo.models.backbones import YOLOv6CSPBep, YOLOv6EfficientRep
 from mmyolo.utils import register_all_modules
+
 from .utils import check_norm_state, is_norm
 
 register_all_modules()
@@ -17,7 +18,7 @@ class TestYOLOv6EfficientRep(TestCase):
     def test_init(self):
         # out_indices in range(len(arch_setting) + 1)
         with pytest.raises(AssertionError):
-            YOLOv6EfficientRep(out_indices=(6, ))
+            YOLOv6EfficientRep(out_indices=(6,))
 
         with pytest.raises(ValueError):
             # frozen_stages must in range(-1, len(arch_setting) + 1)
@@ -34,7 +35,7 @@ class TestYOLOv6EfficientRep(TestCase):
             for param in mod.parameters():
                 assert param.requires_grad is False
         for i in range(1, frozen_stages + 1):
-            layer = getattr(model, f'stage{i}')
+            layer = getattr(model, f"stage{i}")
             for mod in layer.modules():
                 if isinstance(mod, _BatchNorm):
                     assert mod.training is False
@@ -49,7 +50,8 @@ class TestYOLOv6EfficientRep(TestCase):
 
         # Test YOLOv6EfficientRep-P5 forward with widen_factor=0.25
         model = YOLOv6EfficientRep(
-            arch='P5', widen_factor=0.25, out_indices=range(0, 5))
+            arch="P5", widen_factor=0.25, out_indices=range(0, 5)
+        )
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -63,9 +65,8 @@ class TestYOLOv6EfficientRep(TestCase):
 
         # Test YOLOv6EfficientRep forward with dict(type='ReLU')
         model = YOLOv6EfficientRep(
-            widen_factor=0.125,
-            act_cfg=dict(type='ReLU'),
-            out_indices=range(0, 5))
+            widen_factor=0.125, act_cfg=dict(type="ReLU"), out_indices=range(0, 5)
+        )
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -94,11 +95,14 @@ class TestYOLOv6EfficientRep(TestCase):
         assert feat[4].shape == torch.Size((1, 128, 2, 2))
 
         # Test YOLOv6EfficientRep with BatchNorm forward
-        model = YOLOv6EfficientRep(plugins=[
-            dict(
-                cfg=dict(type='mmdet.DropBlock', drop_prob=0.1, block_size=3),
-                stages=(False, False, True, True)),
-        ])
+        model = YOLOv6EfficientRep(
+            plugins=[
+                dict(
+                    cfg=dict(type="mmdet.DropBlock", drop_prob=0.1, block_size=3),
+                    stages=(False, False, True, True),
+                ),
+            ]
+        )
 
         assert len(model.stage1) == 1
         assert len(model.stage2) == 1
@@ -123,7 +127,7 @@ class TestYOLOv6EfficientRep(TestCase):
             for param in mod.parameters():
                 assert param.requires_grad is False
         for i in range(1, frozen_stages + 1):
-            layer = getattr(model, f'stage{i}')
+            layer = getattr(model, f"stage{i}")
             for mod in layer.modules():
                 if isinstance(mod, _BatchNorm):
                     assert mod.training is False
@@ -137,8 +141,7 @@ class TestYOLOv6EfficientRep(TestCase):
         assert check_norm_state(model.modules(), False)
 
         # Test YOLOv6CSPBep forward with widen_factor=0.25
-        model = YOLOv6CSPBep(
-            arch='P5', widen_factor=0.25, out_indices=range(0, 5))
+        model = YOLOv6CSPBep(arch="P5", widen_factor=0.25, out_indices=range(0, 5))
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -152,9 +155,8 @@ class TestYOLOv6EfficientRep(TestCase):
 
         # Test YOLOv6CSPBep forward with dict(type='ReLU')
         model = YOLOv6CSPBep(
-            widen_factor=0.125,
-            act_cfg=dict(type='ReLU'),
-            out_indices=range(0, 5))
+            widen_factor=0.125, act_cfg=dict(type="ReLU"), out_indices=range(0, 5)
+        )
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -183,11 +185,14 @@ class TestYOLOv6EfficientRep(TestCase):
         assert feat[4].shape == torch.Size((1, 128, 2, 2))
 
         # Test YOLOv6CSPBep with BatchNorm forward
-        model = YOLOv6CSPBep(plugins=[
-            dict(
-                cfg=dict(type='mmdet.DropBlock', drop_prob=0.1, block_size=3),
-                stages=(False, False, True, True)),
-        ])
+        model = YOLOv6CSPBep(
+            plugins=[
+                dict(
+                    cfg=dict(type="mmdet.DropBlock", drop_prob=0.1, block_size=3),
+                    stages=(False, False, True, True),
+                ),
+            ]
+        )
 
         assert len(model.stage1) == 1
         assert len(model.stage2) == 1

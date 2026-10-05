@@ -20,8 +20,8 @@ class YOLODetectorAssigner(YOLODetector):
             dict: A dictionary of assigning components.
         """
         assert isinstance(data, dict)
-        assert len(data['inputs']) == 1, 'Only support batchsize == 1'
+        assert len(data["inputs"]) == 1, "Only support batchsize == 1"
         data = self.data_preprocessor(data, True)
-        inputs_hw = data['inputs'].shape[-2:]
-        assign_results = self.bbox_head.assign(data['data_samples'], inputs_hw)
+        inputs_hw = data["inputs"].shape[-2:]
+        assign_results = self.bbox_head.assign(data["data_samples"], inputs_hw)
         return assign_results

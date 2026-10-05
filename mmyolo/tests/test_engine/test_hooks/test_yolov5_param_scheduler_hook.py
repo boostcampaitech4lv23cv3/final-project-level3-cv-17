@@ -19,13 +19,13 @@ class ToyModel(nn.Module):
         super().__init__()
         self.linear = nn.Linear(2, 1)
 
-    def forward(self, inputs, data_samples, mode='tensor'):
+    def forward(self, inputs, data_samples, mode="tensor"):
         labels = torch.stack(data_samples)
         inputs = torch.stack(inputs)
         outputs = self.linear(inputs)
-        if mode == 'tensor':
+        if mode == "tensor":
             return outputs
-        elif mode == 'loss':
+        elif mode == "loss":
             loss = (labels - outputs).sum()
             outputs = dict(loss=loss)
             return outputs
@@ -50,15 +50,17 @@ class DummyDataset(Dataset):
 
 
 optim_wrapper = dict(
-    type='OptimWrapper',
+    type="OptimWrapper",
     optimizer=dict(
-        type='SGD',
+        type="SGD",
         lr=0.01,
         momentum=0.937,
         weight_decay=0.0005,
         nesterov=True,
-        batch_size_per_gpu=1),
-    constructor='YOLOv5OptimizerConstructor')
+        batch_size_per_gpu=1,
+    ),
+    constructor="YOLOv5OptimizerConstructor",
+)
 
 register_all_modules()
 
@@ -69,9 +71,10 @@ class TestYOLOv5ParamSchelerHook(TestCase):
         model = ToyModel()
         train_dataloader = dict(
             dataset=DummyDataset(),
-            sampler=dict(type='DefaultSampler', shuffle=True),
+            sampler=dict(type="DefaultSampler", shuffle=True),
             batch_size=3,
-            num_workers=0)
+            num_workers=0,
+        )
 
         runner = Mock()
         runner.model = model
@@ -80,7 +83,8 @@ class TestYOLOv5ParamSchelerHook(TestCase):
         runner.train_dataloader = Runner.build_dataloader(train_dataloader)
 
         hook = YOLOv5ParamSchedulerHook(
-            scheduler_type='linear', lr_factor=0.01, max_epochs=300)
+            scheduler_type="linear", lr_factor=0.01, max_epochs=300
+        )
 
         # test before train
         runner.epoch = 0
@@ -88,8 +92,8 @@ class TestYOLOv5ParamSchelerHook(TestCase):
         hook.before_train(runner)
 
         for group in runner.optim_wrapper.param_groups:
-            self.assertEqual(group['lr'], 0.01)
-            self.assertEqual(group['momentum'], 0.937)
+            self.assertEqual(group["lr"], 0.01)
+            self.assertEqual(group["momentum"], 0.937)
 
         self.assertFalse(hook._warmup_end)
 
@@ -100,8 +104,8 @@ class TestYOLOv5ParamSchelerHook(TestCase):
 
         for group_idx, group in enumerate(runner.optim_wrapper.param_groups):
             if group_idx == 2:
-                self.assertEqual(round(group['lr'], 5), 0.0991)
-            self.assertEqual(group['momentum'], 0.80137)
+                self.assertEqual(round(group["lr"], 5), 0.0991)
+            self.assertEqual(group["momentum"], 0.80137)
             self.assertFalse(hook._warmup_end)
 
         # test after warm up
@@ -110,8 +114,8 @@ class TestYOLOv5ParamSchelerHook(TestCase):
         self.assertFalse(hook._warmup_end)
 
         for group in runner.optim_wrapper.param_groups:
-            self.assertEqual(group['lr'], 0.01)
-            self.assertEqual(group['momentum'], 0.937)
+            self.assertEqual(group["lr"], 0.01)
+            self.assertEqual(group["momentum"], 0.937)
 
         runner.iter = 1001
         hook.before_train_iter(runner, 0)
@@ -120,5 +124,5 @@ class TestYOLOv5ParamSchelerHook(TestCase):
         # test after train_epoch
         hook.after_train_epoch(runner)
         for group in runner.optim_wrapper.param_groups:
-            self.assertEqual(group['lr'], 0.01)
-            self.assertEqual(group['momentum'], 0.937)
+            self.assertEqual(group["lr"], 0.01)
+            self.assertEqual(group["momentum"], 0.937)

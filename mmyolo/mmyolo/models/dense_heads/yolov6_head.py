@@ -5,8 +5,7 @@ import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmdet.models.utils import multi_apply
-from mmdet.utils import (ConfigType, OptConfigType, OptInstanceList,
-                         OptMultiConfig)
+from mmdet.utils import ConfigType, OptConfigType, OptInstanceList, OptMultiConfig
 from mmengine import MessageHub
 from mmengine.dist import get_dist_info
 from mmengine.model import BaseModule, bias_init_with_prob
@@ -14,6 +13,7 @@ from mmengine.structures import InstanceData
 from torch import Tensor
 
 from mmyolo.registry import MODELS, TASK_UTILS
+
 from .yolov5_head import YOLOv5Head
 
 
@@ -44,16 +44,17 @@ class YOLOv6HeadModule(BaseModule):
             Defaults to None.
     """
 
-    def __init__(self,
-                 num_classes: int,
-                 in_channels: Union[int, Sequence],
-                 widen_factor: float = 1.0,
-                 num_base_priors: int = 1,
-                 featmap_strides: Sequence[int] = (8, 16, 32),
-                 norm_cfg: ConfigType = dict(
-                     type='BN', momentum=0.03, eps=0.001),
-                 act_cfg: ConfigType = dict(type='SiLU', inplace=True),
-                 init_cfg: OptMultiConfig = None):
+    def __init__(
+        self,
+        num_classes: int,
+        in_channels: Union[int, Sequence],
+        widen_factor: float = 1.0,
+        num_base_priors: int = 1,
+        featmap_strides: Sequence[int] = (8, 16, 32),
+        norm_cfg: ConfigType = dict(type="BN", momentum=0.03, eps=0.001),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
+        init_cfg: OptMultiConfig = None,
+    ):
         super().__init__(init_cfg=init_cfg)
 
         self.num_classes = num_classes
@@ -64,8 +65,7 @@ class YOLOv6HeadModule(BaseModule):
         self.act_cfg = act_cfg
 
         if isinstance(in_channels, int):
-            self.in_channels = [int(in_channels * widen_factor)
-                                ] * self.num_levels
+            self.in_channels = [int(in_channels * widen_factor)] * self.num_levels
         else:
             self.in_channels = [int(i * widen_factor) for i in in_channels]
 
@@ -88,7 +88,9 @@ class YOLOv6HeadModule(BaseModule):
                     stride=1,
                     padding=1 // 2,
                     norm_cfg=self.norm_cfg,
-                    act_cfg=self.act_cfg))
+                    act_cfg=self.act_cfg,
+                )
+            )
             self.cls_convs.append(
                 ConvModule(
                     in_channels=self.in_channels[i],
@@ -97,7 +99,9 @@ class YOLOv6HeadModule(BaseModule):
                     stride=1,
                     padding=3 // 2,
                     norm_cfg=self.norm_cfg,
-                    act_cfg=self.act_cfg))
+                    act_cfg=self.act_cfg,
+                )
+            )
             self.reg_convs.append(
                 ConvModule(
                     in_channels=self.in_channels[i],
@@ -106,28 +110,34 @@ class YOLOv6HeadModule(BaseModule):
                     stride=1,
                     padding=3 // 2,
                     norm_cfg=self.norm_cfg,
-                    act_cfg=self.act_cfg))
+                    act_cfg=self.act_cfg,
+                )
+            )
             self.cls_preds.append(
                 nn.Conv2d(
                     in_channels=self.in_channels[i],
                     out_channels=self.num_base_priors * self.num_classes,
-                    kernel_size=1))
+                    kernel_size=1,
+                )
+            )
             self.reg_preds.append(
                 nn.Conv2d(
                     in_channels=self.in_channels[i],
                     out_channels=self.num_base_priors * 4,
-                    kernel_size=1))
+                    kernel_size=1,
+                )
+            )
 
     def init_weights(self):
         super().init_weights()
         bias_init = bias_init_with_prob(0.01)
         for conv in self.cls_preds:
             conv.bias.data.fill_(bias_init)
-            conv.weight.data.fill_(0.)
+            conv.weight.data.fill_(0.0)
 
         for conv in self.reg_preds:
             conv.bias.data.fill_(1.0)
-            conv.weight.data.fill_(0.)
+            conv.weight.data.fill_(0.0)
 
     def forward(self, x: Tuple[Tensor]) -> Tuple[List]:
         """Forward features from the upstream network.
@@ -140,12 +150,25 @@ class YOLOv6HeadModule(BaseModule):
             predictions.
         """
         assert len(x) == self.num_levels
-        return multi_apply(self.forward_single, x, self.stems, self.cls_convs,
-                           self.cls_preds, self.reg_convs, self.reg_preds)
+        return multi_apply(
+            self.forward_single,
+            x,
+            self.stems,
+            self.cls_convs,
+            self.cls_preds,
+            self.reg_convs,
+            self.reg_preds,
+        )
 
-    def forward_single(self, x: Tensor, stem: nn.Module, cls_conv: nn.Module,
-                       cls_pred: nn.Module, reg_conv: nn.Module,
-                       reg_pred: nn.Module) -> Tuple[Tensor, Tensor]:
+    def forward_single(
+        self,
+        x: Tensor,
+        stem: nn.Module,
+        cls_conv: nn.Module,
+        cls_pred: nn.Module,
+        reg_conv: nn.Module,
+        reg_pred: nn.Module,
+    ) -> Tuple[Tensor, Tensor]:
         """Forward feature of a single scale level."""
         y = stem(x)
         cls_x = y
@@ -178,31 +201,34 @@ class YOLOv6Head(YOLOv5Head):
             Defaults to None.
     """
 
-    def __init__(self,
-                 head_module: ConfigType,
-                 prior_generator: ConfigType = dict(
-                     type='mmdet.MlvlPointGenerator',
-                     offset=0.5,
-                     strides=[8, 16, 32]),
-                 bbox_coder: ConfigType = dict(type='DistancePointBBoxCoder'),
-                 loss_cls: ConfigType = dict(
-                     type='mmdet.VarifocalLoss',
-                     use_sigmoid=True,
-                     alpha=0.75,
-                     gamma=2.0,
-                     iou_weighted=True,
-                     reduction='sum',
-                     loss_weight=1.0),
-                 loss_bbox: ConfigType = dict(
-                     type='IoULoss',
-                     iou_mode='giou',
-                     bbox_format='xyxy',
-                     reduction='mean',
-                     loss_weight=2.5,
-                     return_iou=False),
-                 train_cfg: OptConfigType = None,
-                 test_cfg: OptConfigType = None,
-                 init_cfg: OptMultiConfig = None):
+    def __init__(
+        self,
+        head_module: ConfigType,
+        prior_generator: ConfigType = dict(
+            type="mmdet.MlvlPointGenerator", offset=0.5, strides=[8, 16, 32]
+        ),
+        bbox_coder: ConfigType = dict(type="DistancePointBBoxCoder"),
+        loss_cls: ConfigType = dict(
+            type="mmdet.VarifocalLoss",
+            use_sigmoid=True,
+            alpha=0.75,
+            gamma=2.0,
+            iou_weighted=True,
+            reduction="sum",
+            loss_weight=1.0,
+        ),
+        loss_bbox: ConfigType = dict(
+            type="IoULoss",
+            iou_mode="giou",
+            bbox_format="xyxy",
+            reduction="mean",
+            loss_weight=2.5,
+            return_iou=False,
+        ),
+        train_cfg: OptConfigType = None,
+        test_cfg: OptConfigType = None,
+        init_cfg: OptMultiConfig = None,
+    ):
         super().__init__(
             head_module=head_module,
             prior_generator=prior_generator,
@@ -211,7 +237,8 @@ class YOLOv6Head(YOLOv5Head):
             loss_bbox=loss_bbox,
             train_cfg=train_cfg,
             test_cfg=test_cfg,
-            init_cfg=init_cfg)
+            init_cfg=init_cfg,
+        )
         # yolov6 doesn't need loss_obj
         self.loss_obj = None
 
@@ -222,9 +249,8 @@ class YOLOv6Head(YOLOv5Head):
         The special_init function is designed to deal with this situation.
         """
         if self.train_cfg:
-            self.initial_epoch = self.train_cfg['initial_epoch']
-            self.initial_assigner = TASK_UTILS.build(
-                self.train_cfg.initial_assigner)
+            self.initial_epoch = self.train_cfg["initial_epoch"]
+            self.initial_assigner = TASK_UTILS.build(self.train_cfg.initial_assigner)
             self.assigner = TASK_UTILS.build(self.train_cfg.assigner)
 
             # Add common attributes to reduce calculation
@@ -234,12 +260,13 @@ class YOLOv6Head(YOLOv5Head):
             self.stride_tensor = None
 
     def loss_by_feat(
-            self,
-            cls_scores: Sequence[Tensor],
-            bbox_preds: Sequence[Tensor],
-            batch_gt_instances: Sequence[InstanceData],
-            batch_img_metas: Sequence[dict],
-            batch_gt_instances_ignore: OptInstanceList = None) -> dict:
+        self,
+        cls_scores: Sequence[Tensor],
+        bbox_preds: Sequence[Tensor],
+        batch_gt_instances: Sequence[InstanceData],
+        batch_img_metas: Sequence[dict],
+        batch_gt_instances_ignore: OptInstanceList = None,
+    ) -> dict:
         """Calculate the loss based on the features extracted by the detection
         head.
 
@@ -265,15 +292,13 @@ class YOLOv6Head(YOLOv5Head):
 
         # get epoch information from message hub
         message_hub = MessageHub.get_current_instance()
-        current_epoch = message_hub.get_info('epoch')
+        current_epoch = message_hub.get_info("epoch")
 
         num_imgs = len(batch_img_metas)
         if batch_gt_instances_ignore is None:
             batch_gt_instances_ignore = [None] * num_imgs
 
-        current_featmap_sizes = [
-            cls_score.shape[2:] for cls_score in cls_scores
-        ]
+        current_featmap_sizes = [cls_score.shape[2:] for cls_score in cls_scores]
         # If the shape does not equal, generate new one
         if current_featmap_sizes != self.featmap_sizes_train:
             self.featmap_sizes_train = current_featmap_sizes
@@ -282,11 +307,11 @@ class YOLOv6Head(YOLOv5Head):
                 self.featmap_sizes_train,
                 dtype=cls_scores[0].dtype,
                 device=cls_scores[0].device,
-                with_stride=True)
+                with_stride=True,
+            )
 
             self.num_level_priors = [len(n) for n in mlvl_priors_with_stride]
-            self.flatten_priors_train = torch.cat(
-                mlvl_priors_with_stride, dim=0)
+            self.flatten_priors_train = torch.cat(mlvl_priors_with_stride, dim=0)
             self.stride_tensor = self.flatten_priors_train[..., [2]]
 
         # gt info
@@ -297,8 +322,7 @@ class YOLOv6Head(YOLOv5Head):
 
         # pred info
         flatten_cls_preds = [
-            cls_pred.permute(0, 2, 3, 1).reshape(num_imgs, -1,
-                                                 self.num_classes)
+            cls_pred.permute(0, 2, 3, 1).reshape(num_imgs, -1, self.num_classes)
             for cls_pred in cls_scores
         ]
 
@@ -310,24 +334,34 @@ class YOLOv6Head(YOLOv5Head):
         flatten_cls_preds = torch.cat(flatten_cls_preds, dim=1)
         flatten_pred_bboxes = torch.cat(flatten_pred_bboxes, dim=1)
         flatten_pred_bboxes = self.bbox_coder.decode(
-            self.flatten_priors_train[..., :2], flatten_pred_bboxes,
-            self.stride_tensor[:, 0])
+            self.flatten_priors_train[..., :2],
+            flatten_pred_bboxes,
+            self.stride_tensor[:, 0],
+        )
         pred_scores = torch.sigmoid(flatten_cls_preds)
 
         if current_epoch < self.initial_epoch:
             assigned_result = self.initial_assigner(
-                flatten_pred_bboxes.detach(), self.flatten_priors_train,
-                self.num_level_priors, gt_labels, gt_bboxes, pad_bbox_flag)
+                flatten_pred_bboxes.detach(),
+                self.flatten_priors_train,
+                self.num_level_priors,
+                gt_labels,
+                gt_bboxes,
+                pad_bbox_flag,
+            )
         else:
-            assigned_result = self.assigner(flatten_pred_bboxes.detach(),
-                                            pred_scores.detach(),
-                                            self.flatten_priors_train,
-                                            gt_labels, gt_bboxes,
-                                            pad_bbox_flag)
+            assigned_result = self.assigner(
+                flatten_pred_bboxes.detach(),
+                pred_scores.detach(),
+                self.flatten_priors_train,
+                gt_labels,
+                gt_bboxes,
+                pad_bbox_flag,
+            )
 
-        assigned_bboxes = assigned_result['assigned_bboxes']
-        assigned_scores = assigned_result['assigned_scores']
-        fg_mask_pre_prior = assigned_result['fg_mask_pre_prior']
+        assigned_bboxes = assigned_result["assigned_bboxes"]
+        assigned_scores = assigned_result["assigned_scores"]
+        fg_mask_pre_prior = assigned_result["fg_mask_pre_prior"]
 
         # cls loss
         with torch.cuda.amp.autocast(enabled=False):
@@ -350,26 +384,30 @@ class YOLOv6Head(YOLOv5Head):
             # iou loss
             prior_bbox_mask = fg_mask_pre_prior.unsqueeze(-1).repeat([1, 1, 4])
             pred_bboxes_pos = torch.masked_select(
-                flatten_pred_bboxes, prior_bbox_mask).reshape([-1, 4])
+                flatten_pred_bboxes, prior_bbox_mask
+            ).reshape([-1, 4])
             assigned_bboxes_pos = torch.masked_select(
-                assigned_bboxes, prior_bbox_mask).reshape([-1, 4])
+                assigned_bboxes, prior_bbox_mask
+            ).reshape([-1, 4])
             bbox_weight = torch.masked_select(
-                assigned_scores.sum(-1), fg_mask_pre_prior).unsqueeze(-1)
+                assigned_scores.sum(-1), fg_mask_pre_prior
+            ).unsqueeze(-1)
             loss_bbox = self.loss_bbox(
                 pred_bboxes_pos,
                 assigned_bboxes_pos,
                 weight=bbox_weight,
-                avg_factor=assigned_scores_sum)
+                avg_factor=assigned_scores_sum,
+            )
         else:
             loss_bbox = flatten_pred_bboxes.sum() * 0
 
         _, world_size = get_dist_info()
-        return dict(
-            loss_cls=loss_cls * world_size, loss_bbox=loss_bbox * world_size)
+        return dict(loss_cls=loss_cls * world_size, loss_bbox=loss_bbox * world_size)
 
     @staticmethod
-    def gt_instances_preprocess(batch_gt_instances: Union[Tensor, Sequence],
-                                batch_size: int) -> Tensor:
+    def gt_instances_preprocess(
+        batch_gt_instances: Union[Tensor, Sequence], batch_size: int
+    ) -> Tensor:
         """Split batch_gt_instances with batch size, from [all_gt_bboxes, 6]
         to.
 
@@ -386,24 +424,24 @@ class YOLOv6Head(YOLOv5Head):
         """
         if isinstance(batch_gt_instances, Sequence):
             max_gt_bbox_len = max(
-                [len(gt_instances) for gt_instances in batch_gt_instances])
+                [len(gt_instances) for gt_instances in batch_gt_instances]
+            )
             # fill [-1., 0., 0., 0., 0.] if some shape of
             # single batch not equal max_gt_bbox_len
             batch_instance_list = []
             for index, gt_instance in enumerate(batch_gt_instances):
                 bboxes = gt_instance.bboxes
                 labels = gt_instance.labels
-                batch_instance_list.append(
-                    torch.cat((labels[:, None], bboxes), dim=-1))
+                batch_instance_list.append(torch.cat((labels[:, None], bboxes), dim=-1))
 
                 if bboxes.shape[0] >= max_gt_bbox_len:
                     continue
 
-                fill_tensor = bboxes.new_full(
-                    [max_gt_bbox_len - bboxes.shape[0], 5], 0)
-                fill_tensor[:, 0] = -1.
+                fill_tensor = bboxes.new_full([max_gt_bbox_len - bboxes.shape[0], 5], 0)
+                fill_tensor[:, 0] = -1.0
                 batch_instance_list[index] = torch.cat(
-                    (batch_instance_list[-1], fill_tensor), dim=0)
+                    (batch_instance_list[-1], fill_tensor), dim=0
+                )
 
             return torch.stack(batch_instance_list)
         else:
@@ -413,8 +451,9 @@ class YOLOv6Head(YOLOv5Head):
             batch_instance_list = []
             max_gt_bbox_len = 0
             for i in range(batch_size):
-                single_batch_instance = \
-                    batch_gt_instances[batch_gt_instances[:, 0] == i, :]
+                single_batch_instance = batch_gt_instances[
+                    batch_gt_instances[:, 0] == i, :
+                ]
                 single_batch_instance = single_batch_instance[:, 1:]
                 batch_instance_list.append(single_batch_instance)
                 if len(single_batch_instance) > max_gt_bbox_len:
@@ -426,9 +465,11 @@ class YOLOv6Head(YOLOv5Head):
                 if gt_instance.shape[0] >= max_gt_bbox_len:
                     continue
                 fill_tensor = batch_gt_instances.new_full(
-                    [max_gt_bbox_len - gt_instance.shape[0], 5], 0)
-                fill_tensor[:, 0] = -1.
+                    [max_gt_bbox_len - gt_instance.shape[0], 5], 0
+                )
+                fill_tensor[:, 0] = -1.0
                 batch_instance_list[index] = torch.cat(
-                    (batch_instance_list[index], fill_tensor), dim=0)
+                    (batch_instance_list[index], fill_tensor), dim=0
+                )
 
             return torch.stack(batch_instance_list)
