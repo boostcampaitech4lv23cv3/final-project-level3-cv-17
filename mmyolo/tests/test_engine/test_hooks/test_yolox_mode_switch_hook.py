@@ -28,11 +28,11 @@ class DummyDataset(Dataset):
 
 
 pipeline1 = [
-    dict(type='mmdet.Resize'),
+    dict(type="mmdet.Resize"),
 ]
 
 pipeline2 = [
-    dict(type='mmdet.RandomFlip'),
+    dict(type="mmdet.RandomFlip"),
 ]
 register_all_modules()
 
@@ -42,9 +42,10 @@ class TestYOLOXModeSwitchHook(TestCase):
     def test(self):
         train_dataloader = dict(
             dataset=DummyDataset(),
-            sampler=dict(type='DefaultSampler', shuffle=True),
+            sampler=dict(type="DefaultSampler", shuffle=True),
             batch_size=3,
-            num_workers=0)
+            num_workers=0,
+        )
 
         runner = Mock()
         runner.model = Mock()
@@ -55,13 +56,11 @@ class TestYOLOXModeSwitchHook(TestCase):
         runner.train_dataloader = Runner.build_dataloader(train_dataloader)
         runner.train_dataloader.dataset.pipeline = pipeline1
 
-        hook = YOLOXModeSwitchHook(
-            num_last_epochs=15, new_train_pipeline=pipeline2)
+        hook = YOLOXModeSwitchHook(num_last_epochs=15, new_train_pipeline=pipeline2)
 
         # test after change mode
         runner.epoch = 284
         runner.max_epochs = 300
         hook.before_train_epoch(runner)
         self.assertTrue(runner.model.bbox_head.use_bbox_aux)
-        self.assertEqual(runner.train_loop.dataloader.dataset.pipeline,
-                         pipeline2)
+        self.assertEqual(runner.train_loop.dataloader.dataset.pipeline, pipeline2)

@@ -1,6 +1,6 @@
 _base_ = "../_base_/default_runtime.py"
 
-load_from = 'https://download.openmmlab.com/mmyolo/v0/yolov6/yolov6_s_syncbn_fast_8xb32-400e_coco/yolov6_s_syncbn_fast_8xb32-400e_coco_20221102_203035-932e1d91.pth'
+load_from = "https://download.openmmlab.com/mmyolo/v0/yolov6/yolov6_s_syncbn_fast_8xb32-400e_coco/yolov6_s_syncbn_fast_8xb32-400e_coco_20221102_203035-932e1d91.pth"
 
 # dataset settings
 data_root = _base_.data_root
@@ -291,7 +291,7 @@ val_evaluator = dict(
     ann_file=data_root + _base_.val_ann_file,
     metric="bbox",
     classwise=True,
-    prefix=_base_.dataset_prefix
+    prefix=_base_.dataset_prefix,
 )
 test_evaluator = val_evaluator
 
