@@ -6,6 +6,7 @@
 model (:obj:`torch.nn.Module` or dict): The model to be run. It can be
 a dict used for build a model.
 """
+
 deepen_factor = 0.33
 widen_factor = 0.5
 num_classes = 3

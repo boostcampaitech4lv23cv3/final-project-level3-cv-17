@@ -7,6 +7,7 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmyolo.models.backbones import YOLOv7Backbone
 from mmyolo.utils import register_all_modules
+
 from .utils import check_norm_state
 
 register_all_modules()
@@ -17,7 +18,7 @@ class TestYOLOv7Backbone(TestCase):
     def test_init(self):
         # out_indices in range(len(arch_setting) + 1)
         with pytest.raises(AssertionError):
-            YOLOv7Backbone(out_indices=(6, ))
+            YOLOv7Backbone(out_indices=(6,))
 
         with pytest.raises(ValueError):
             # frozen_stages must in range(-1, len(arch_setting) + 1)
@@ -34,7 +35,7 @@ class TestYOLOv7Backbone(TestCase):
             for param in mod.parameters():
                 assert param.requires_grad is False
         for i in range(1, frozen_stages + 1):
-            layer = getattr(model, f'stage{i}')
+            layer = getattr(model, f"stage{i}")
             for mod in layer.modules():
                 if isinstance(mod, _BatchNorm):
                     assert mod.training is False
@@ -48,8 +49,7 @@ class TestYOLOv7Backbone(TestCase):
         assert check_norm_state(model.modules(), False)
 
         # Test YOLOv7Backbone-L forward with widen_factor=0.25
-        model = YOLOv7Backbone(
-            widen_factor=0.25, out_indices=tuple(range(0, 5)))
+        model = YOLOv7Backbone(widen_factor=0.25, out_indices=tuple(range(0, 5)))
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -66,10 +66,11 @@ class TestYOLOv7Backbone(TestCase):
             widen_factor=0.25,
             plugins=[
                 dict(
-                    cfg=dict(
-                        type='mmdet.DropBlock', drop_prob=0.1, block_size=3),
-                    stages=(False, False, True, True)),
-            ])
+                    cfg=dict(type="mmdet.DropBlock", drop_prob=0.1, block_size=3),
+                    stages=(False, False, True, True),
+                ),
+            ],
+        )
 
         assert len(model.stage1) == 2
         assert len(model.stage2) == 2
@@ -84,7 +85,7 @@ class TestYOLOv7Backbone(TestCase):
         assert feat[2].shape == torch.Size((1, 256, 4, 4))
 
         # Test YOLOv7Backbone-X forward with widen_factor=0.25
-        model = YOLOv7Backbone(arch='X', widen_factor=0.25)
+        model = YOLOv7Backbone(arch="X", widen_factor=0.25)
         model.train()
 
         imgs = torch.randn(1, 3, 64, 64)
@@ -95,7 +96,7 @@ class TestYOLOv7Backbone(TestCase):
         assert feat[2].shape == torch.Size((1, 320, 2, 2))
 
         # Test YOLOv7Backbone-tiny forward with widen_factor=0.25
-        model = YOLOv7Backbone(arch='Tiny', widen_factor=0.25)
+        model = YOLOv7Backbone(arch="Tiny", widen_factor=0.25)
         model.train()
 
         feat = model(imgs)
@@ -105,8 +106,7 @@ class TestYOLOv7Backbone(TestCase):
         assert feat[2].shape == torch.Size((1, 128, 2, 2))
 
         # Test YOLOv7Backbone-w forward with widen_factor=0.25
-        model = YOLOv7Backbone(
-            arch='W', widen_factor=0.25, out_indices=(2, 3, 4, 5))
+        model = YOLOv7Backbone(arch="W", widen_factor=0.25, out_indices=(2, 3, 4, 5))
         model.train()
 
         imgs = torch.randn(1, 3, 128, 128)
@@ -118,8 +118,7 @@ class TestYOLOv7Backbone(TestCase):
         assert feat[3].shape == torch.Size((1, 256, 2, 2))
 
         # Test YOLOv7Backbone-w forward with widen_factor=0.25
-        model = YOLOv7Backbone(
-            arch='D', widen_factor=0.25, out_indices=(2, 3, 4, 5))
+        model = YOLOv7Backbone(arch="D", widen_factor=0.25, out_indices=(2, 3, 4, 5))
         model.train()
 
         feat = model(imgs)
@@ -130,8 +129,7 @@ class TestYOLOv7Backbone(TestCase):
         assert feat[3].shape == torch.Size((1, 384, 2, 2))
 
         # Test YOLOv7Backbone-w forward with widen_factor=0.25
-        model = YOLOv7Backbone(
-            arch='E', widen_factor=0.25, out_indices=(2, 3, 4, 5))
+        model = YOLOv7Backbone(arch="E", widen_factor=0.25, out_indices=(2, 3, 4, 5))
         model.train()
 
         feat = model(imgs)
@@ -142,8 +140,7 @@ class TestYOLOv7Backbone(TestCase):
         assert feat[3].shape == torch.Size((1, 320, 2, 2))
 
         # Test YOLOv7Backbone-w forward with widen_factor=0.25
-        model = YOLOv7Backbone(
-            arch='E2E', widen_factor=0.25, out_indices=(2, 3, 4, 5))
+        model = YOLOv7Backbone(arch="E2E", widen_factor=0.25, out_indices=(2, 3, 4, 5))
         model.train()
 
         feat = model(imgs)
