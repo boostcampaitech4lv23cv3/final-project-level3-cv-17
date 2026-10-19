@@ -1,4 +1,4 @@
-# pack-refs with: peeled fully-peeled sorted 
+# pack-refs with: peeled fully-peeled sorted
 6153603ac10c179bbbcc05c2e8ec762640117c77 refs/remotes/origin/damo-yolo
 c682ae82c60383e5716e088fd0e54d2d1e3c4da1 refs/remotes/origin/dev
 b0cf0732412d9d7a69f5b7fb9368dab8be6983cc refs/remotes/origin/main

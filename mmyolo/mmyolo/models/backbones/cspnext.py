@@ -8,6 +8,7 @@ from mmdet.models.backbones.csp_darknet import CSPLayer
 from mmdet.utils import ConfigType, OptConfigType, OptMultiConfig
 
 from mmyolo.registry import MODELS
+
 from ..layers import SPPFBottleneck
 from .base_backbone import BaseBackbone
 
@@ -51,19 +52,28 @@ class CSPNeXt(BaseBackbone):
         init_cfg (:obj:`ConfigDict` or dict or list[dict] or
             list[:obj:`ConfigDict`]): Initialization config dict.
     """
+
     # From left to right:
     # in_channels, out_channels, num_blocks, add_identity, use_spp
     arch_settings = {
-        'P5': [[64, 128, 3, True, False], [128, 256, 6, True, False],
-               [256, 512, 6, True, False], [512, 1024, 3, False, True]],
-        'P6': [[64, 128, 3, True, False], [128, 256, 6, True, False],
-               [256, 512, 6, True, False], [512, 768, 3, True, False],
-               [768, 1024, 3, False, True]]
+        "P5": [
+            [64, 128, 3, True, False],
+            [128, 256, 6, True, False],
+            [256, 512, 6, True, False],
+            [512, 1024, 3, False, True],
+        ],
+        "P6": [
+            [64, 128, 3, True, False],
+            [128, 256, 6, True, False],
+            [256, 512, 6, True, False],
+            [512, 768, 3, True, False],
+            [768, 1024, 3, False, True],
+        ],
     }
 
     def __init__(
         self,
-        arch: str = 'P5',
+        arch: str = "P5",
         deepen_factor: float = 1.0,
         widen_factor: float = 1.0,
         input_channels: int = 3,
@@ -75,24 +85,24 @@ class CSPNeXt(BaseBackbone):
         arch_ovewrite: dict = None,
         channel_attention: bool = True,
         conv_cfg: OptConfigType = None,
-        norm_cfg: ConfigType = dict(type='BN'),
-        act_cfg: ConfigType = dict(type='SiLU', inplace=True),
+        norm_cfg: ConfigType = dict(type="BN"),
+        act_cfg: ConfigType = dict(type="SiLU", inplace=True),
         norm_eval: bool = False,
         init_cfg: OptMultiConfig = dict(
-            type='Kaiming',
-            layer='Conv2d',
+            type="Kaiming",
+            layer="Conv2d",
             a=math.sqrt(5),
-            distribution='uniform',
-            mode='fan_in',
-            nonlinearity='leaky_relu')
+            distribution="uniform",
+            mode="fan_in",
+            nonlinearity="leaky_relu",
+        ),
     ) -> None:
         arch_setting = self.arch_settings[arch]
         if arch_ovewrite:
             arch_setting = arch_ovewrite
         self.channel_attention = channel_attention
         self.use_depthwise = use_depthwise
-        self.conv = DepthwiseSeparableConvModule \
-            if use_depthwise else ConvModule
+        self.conv = DepthwiseSeparableConvModule if use_depthwise else ConvModule
         self.expand_ratio = expand_ratio
         self.conv_cfg = conv_cfg
 
@@ -107,7 +117,8 @@ class CSPNeXt(BaseBackbone):
             norm_cfg=norm_cfg,
             act_cfg=act_cfg,
             norm_eval=norm_eval,
-            init_cfg=init_cfg)
+            init_cfg=init_cfg,
+        )
 
     def build_stem_layer(self) -> nn.Module:
         """Build a stem layer."""
@@ -119,7 +130,8 @@ class CSPNeXt(BaseBackbone):
                 padding=1,
                 stride=2,
                 norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg),
+                act_cfg=self.act_cfg,
+            ),
             ConvModule(
                 int(self.arch_setting[0][0] * self.widen_factor // 2),
                 int(self.arch_setting[0][0] * self.widen_factor // 2),
@@ -127,7 +139,8 @@ class CSPNeXt(BaseBackbone):
                 padding=1,
                 stride=1,
                 norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg),
+                act_cfg=self.act_cfg,
+            ),
             ConvModule(
                 int(self.arch_setting[0][0] * self.widen_factor // 2),
                 int(self.arch_setting[0][0] * self.widen_factor),
@@ -135,7 +148,9 @@ class CSPNeXt(BaseBackbone):
                 padding=1,
                 stride=1,
                 norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg))
+                act_cfg=self.act_cfg,
+            ),
+        )
         return stem
 
     def build_stage_layer(self, stage_idx: int, setting: list) -> list:
@@ -160,7 +175,8 @@ class CSPNeXt(BaseBackbone):
             padding=1,
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
-            act_cfg=self.act_cfg)
+            act_cfg=self.act_cfg,
+        )
         stage.append(conv_layer)
         if use_spp:
             spp = SPPFBottleneck(
@@ -169,7 +185,8 @@ class CSPNeXt(BaseBackbone):
                 kernel_sizes=5,
                 conv_cfg=self.conv_cfg,
                 norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg)
+                act_cfg=self.act_cfg,
+            )
             stage.append(spp)
         csp_layer = CSPLayer(
             out_channels,
@@ -182,6 +199,7 @@ class CSPNeXt(BaseBackbone):
             channel_attention=self.channel_attention,
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
-            act_cfg=self.act_cfg)
+            act_cfg=self.act_cfg,
+        )
         stage.append(csp_layer)
         return stage

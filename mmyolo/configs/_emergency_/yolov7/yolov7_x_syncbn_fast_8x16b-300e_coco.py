@@ -1,6 +1,6 @@
 _base_ = "./yolov7_l_syncbn_fast_8x16b-300e_coco.py"
 
-load_from = 'https://download.openmmlab.com/mmyolo/v0/yolov7/yolov7_x_syncbn_fast_8x16b-300e_coco/yolov7_x_syncbn_fast_8x16b-300e_coco_20221124_215331-ef949a68.pth'
+load_from = "https://download.openmmlab.com/mmyolo/v0/yolov7/yolov7_x_syncbn_fast_8x16b-300e_coco/yolov7_x_syncbn_fast_8x16b-300e_coco_20221124_215331-ef949a68.pth"
 
 model = dict(
     backbone=dict(arch="X"),
