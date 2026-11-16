@@ -20,8 +20,7 @@ class TestPPYOLOECSPPAFPN(TestCase):
             torch.rand(1, in_channels[i], feat_sizes[i], feat_sizes[i])
             for i in range(len(in_channels))
         ]
-        neck = PPYOLOECSPPAFPN(
-            in_channels=in_channels, out_channels=out_channels)
+        neck = PPYOLOECSPPAFPN(in_channels=in_channels, out_channels=out_channels)
         outs = neck(feats)
         assert len(outs) == len(feats)
         for i in range(len(feats)):
@@ -41,10 +40,9 @@ class TestPPYOLOECSPPAFPN(TestCase):
             in_channels=in_channels,
             out_channels=out_channels,
             drop_block_cfg=dict(
-                type='mmdet.DropBlock',
-                drop_prob=0.1,
-                block_size=3,
-                warm_iters=0))
+                type="mmdet.DropBlock", drop_prob=0.1, block_size=3, warm_iters=0
+            ),
+        )
         neck.train()
         outs = neck(feats)
         assert len(outs) == len(feats)

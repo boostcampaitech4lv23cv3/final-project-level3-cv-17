@@ -31,9 +31,8 @@ class TestYOLOv7PAFPN(TestCase):
 
         # test is_tiny_version
         neck = YOLOv7PAFPN(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            is_tiny_version=True)
+            in_channels=in_channels, out_channels=out_channels, is_tiny_version=True
+        )
         outs = neck(feats)
         assert len(outs) == len(feats)
         for i in range(len(feats)):
@@ -44,7 +43,8 @@ class TestYOLOv7PAFPN(TestCase):
         neck = YOLOv7PAFPN(
             in_channels=in_channels,
             out_channels=out_channels,
-            use_in_channels_in_downsample=True)
+            use_in_channels_in_downsample=True,
+        )
         for f in feats:
             print(f.shape)
         outs = neck(feats)
@@ -57,9 +57,8 @@ class TestYOLOv7PAFPN(TestCase):
 
         # test use_repconv_outs is False
         neck = YOLOv7PAFPN(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            use_repconv_outs=False)
+            in_channels=in_channels, out_channels=out_channels, use_repconv_outs=False
+        )
         self.assertIsInstance(neck.out_layers[0], ConvModule)
 
         # test P6

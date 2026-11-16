@@ -6,6 +6,9 @@ from .yolov5_crowdhuman import YOLOv5CrowdHumanDataset
 from .yolov5_voc import YOLOv5VOCDataset
 
 __all__ = [
-    'YOLOv5CocoDataset', 'YOLOv5VOCDataset', 'BatchShapePolicy',
-    'yolov5_collate', 'YOLOv5CrowdHumanDataset'
+    "YOLOv5CocoDataset",
+    "YOLOv5VOCDataset",
+    "BatchShapePolicy",
+    "yolov5_collate",
+    "YOLOv5CrowdHumanDataset",
 ]

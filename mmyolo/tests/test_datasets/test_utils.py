@@ -38,14 +38,13 @@ class TestYOLOv5Collate(unittest.TestCase):
 
         out = yolov5_collate([dict(inputs=inputs, data_samples=data_samples)])
         self.assertIsInstance(out, dict)
-        self.assertTrue(out['inputs'].shape == (1, 3, 10, 10))
-        self.assertTrue(out['data_samples'].shape == (4, 6))
+        self.assertTrue(out["inputs"].shape == (1, 3, 10, 10))
+        self.assertTrue(out["data_samples"].shape == (4, 6))
 
-        out = yolov5_collate([dict(inputs=inputs, data_samples=data_samples)] *
-                             2)
+        out = yolov5_collate([dict(inputs=inputs, data_samples=data_samples)] * 2)
         self.assertIsInstance(out, dict)
-        self.assertTrue(out['inputs'].shape == (2, 3, 10, 10))
-        self.assertTrue(out['data_samples'].shape == (8, 6))
+        self.assertTrue(out["inputs"].shape == (2, 3, 10, 10))
+        self.assertTrue(out["data_samples"].shape == (8, 6))
 
     def test_yolov5_collate_with_multi_scale(self):
         rng = np.random.RandomState(0)
@@ -59,75 +58,71 @@ class TestYOLOv5Collate(unittest.TestCase):
         gt_instances.labels = torch.LongTensor(labels)
         data_samples.gt_instances = gt_instances
 
-        out = yolov5_collate([dict(inputs=inputs, data_samples=data_samples)],
-                             use_ms_training=True)
+        out = yolov5_collate(
+            [dict(inputs=inputs, data_samples=data_samples)], use_ms_training=True
+        )
         self.assertIsInstance(out, dict)
-        self.assertTrue(out['inputs'][0].shape == (3, 10, 10))
-        print(out['data_samples'].shape)
-        self.assertTrue(out['data_samples'].shape == (4, 6))
-        self.assertIsInstance(out['inputs'], list)
-        self.assertIsInstance(out['data_samples'], torch.Tensor)
+        self.assertTrue(out["inputs"][0].shape == (3, 10, 10))
+        print(out["data_samples"].shape)
+        self.assertTrue(out["data_samples"].shape == (4, 6))
+        self.assertIsInstance(out["inputs"], list)
+        self.assertIsInstance(out["data_samples"], torch.Tensor)
 
         out = yolov5_collate(
-            [dict(inputs=inputs, data_samples=data_samples)] * 2,
-            use_ms_training=True)
+            [dict(inputs=inputs, data_samples=data_samples)] * 2, use_ms_training=True
+        )
         self.assertIsInstance(out, dict)
-        self.assertTrue(out['inputs'][0].shape == (3, 10, 10))
-        self.assertTrue(out['data_samples'].shape == (8, 6))
-        self.assertIsInstance(out['inputs'], list)
-        self.assertIsInstance(out['data_samples'], torch.Tensor)
+        self.assertTrue(out["inputs"][0].shape == (3, 10, 10))
+        self.assertTrue(out["data_samples"].shape == (8, 6))
+        self.assertIsInstance(out["inputs"], list)
+        self.assertIsInstance(out["data_samples"], torch.Tensor)
 
 
 class TestBatchShapePolicy(unittest.TestCase):
 
     def test_batch_shape_policy(self):
-        src_data_infos = [{
-            'height': 20,
-            'width': 100,
-        }, {
-            'height': 11,
-            'width': 100,
-        }, {
-            'height': 21,
-            'width': 100,
-        }, {
-            'height': 30,
-            'width': 100,
-        }, {
-            'height': 10,
-            'width': 100,
-        }]
+        src_data_infos = [
+            {
+                "height": 20,
+                "width": 100,
+            },
+            {
+                "height": 11,
+                "width": 100,
+            },
+            {
+                "height": 21,
+                "width": 100,
+            },
+            {
+                "height": 30,
+                "width": 100,
+            },
+            {
+                "height": 10,
+                "width": 100,
+            },
+        ]
 
-        expected_data_infos = [{
-            'height': 10,
-            'width': 100,
-            'batch_shape': np.array([96, 672])
-        }, {
-            'height': 11,
-            'width': 100,
-            'batch_shape': np.array([96, 672])
-        }, {
-            'height': 20,
-            'width': 100,
-            'batch_shape': np.array([160, 672])
-        }, {
-            'height': 21,
-            'width': 100,
-            'batch_shape': np.array([160, 672])
-        }, {
-            'height': 30,
-            'width': 100,
-            'batch_shape': np.array([224, 672])
-        }]
+        expected_data_infos = [
+            {"height": 10, "width": 100, "batch_shape": np.array([96, 672])},
+            {"height": 11, "width": 100, "batch_shape": np.array([96, 672])},
+            {"height": 20, "width": 100, "batch_shape": np.array([160, 672])},
+            {"height": 21, "width": 100, "batch_shape": np.array([160, 672])},
+            {"height": 30, "width": 100, "batch_shape": np.array([224, 672])},
+        ]
 
         batch_shapes_policy = BatchShapePolicy(batch_size=2)
         out_data_infos = batch_shapes_policy(src_data_infos)
 
         for i in range(5):
             self.assertEqual(
-                (expected_data_infos[i]['height'],
-                 expected_data_infos[i]['width']),
-                (out_data_infos[i]['height'], out_data_infos[i]['width']))
+                (expected_data_infos[i]["height"], expected_data_infos[i]["width"]),
+                (out_data_infos[i]["height"], out_data_infos[i]["width"]),
+            )
             self.assertTrue(
-                np.allclose(expected_data_infos[i]['batch_shape'],
-                            out_data_infos[i]['batch_shape']))
+                np.allclose(
+                    expected_data_infos[i]["batch_shape"],
+                    out_data_infos[i]["batch_shape"],
+                )
+            )
