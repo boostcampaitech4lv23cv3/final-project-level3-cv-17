@@ -32,14 +32,15 @@ class YOLOv5DetDataPreprocessor(DetDataPreprocessor):
         """
         if not training:
             return super().forward(data, training)
-        assert isinstance(data['data_samples'], torch.Tensor), \
-            '"data_samples" should be a tensor, but got ' \
-            f'{type(data["data_samples"])}. The possible reason for this ' \
-            'is that you are not using it with ' \
-            '"mmyolo.datasets.utils.yolov5_collate". Please refer to ' \
+        assert isinstance(data["data_samples"], torch.Tensor), (
+            '"data_samples" should be a tensor, but got '
+            f'{type(data["data_samples"])}. The possible reason for this '
+            "is that you are not using it with "
+            '"mmyolo.datasets.utils.yolov5_collate". Please refer to '
             '"configs/yolov5/yolov5_s-v61_syncbn_fast_8xb16-300e_coco.py".'
+        )
 
-        inputs = data['inputs'].to(self.device, non_blocking=True)
+        inputs = data["inputs"].to(self.device, non_blocking=True)
 
         if self._channel_conversion and inputs.shape[1] == 3:
             inputs = inputs[:, [2, 1, 0], ...]
@@ -47,16 +48,16 @@ class YOLOv5DetDataPreprocessor(DetDataPreprocessor):
         if self._enable_normalize:
             inputs = (inputs - self.mean) / self.std
 
-        data_samples = data['data_samples'].to(self.device, non_blocking=True)
+        data_samples = data["data_samples"].to(self.device, non_blocking=True)
 
         if self.batch_augments is not None:
             for batch_aug in self.batch_augments:
                 inputs, data_samples = batch_aug(inputs, data_samples)
 
-        img_metas = [{'batch_input_shape': inputs.shape[2:]}] * len(inputs)
-        data_samples = {'bboxes_labels': data_samples, 'img_metas': img_metas}
+        img_metas = [{"batch_input_shape": inputs.shape[2:]}] * len(inputs)
+        data_samples = {"bboxes_labels": data_samples, "img_metas": img_metas}
 
-        return {'inputs': inputs, 'data_samples': data_samples}
+        return {"inputs": inputs, "data_samples": data_samples}
 
 
 @MODELS.register_module()
@@ -88,16 +89,18 @@ class PPYOLOEDetDataPreprocessor(DetDataPreprocessor):
         if not training:
             return super().forward(data, training)
 
-        assert isinstance(data['inputs'], list) and is_list_of(
-            data['inputs'], torch.Tensor), \
-            '"inputs" should be a list of Tensor, but got ' \
-            f'{type(data["inputs"])}. The possible reason for this ' \
-            'is that you are not using it with ' \
-            '"mmyolo.datasets.utils.yolov5_collate". Please refer to ' \
+        assert isinstance(data["inputs"], list) and is_list_of(
+            data["inputs"], torch.Tensor
+        ), (
+            '"inputs" should be a list of Tensor, but got '
+            f'{type(data["inputs"])}. The possible reason for this '
+            "is that you are not using it with "
+            '"mmyolo.datasets.utils.yolov5_collate". Please refer to '
             '"cconfigs/ppyoloe/ppyoloe_plus_s_fast_8xb8-80e_coco.py".'
+        )
 
         data = self.cast_data(data)
-        inputs, data_samples = data['inputs'], data['data_samples']
+        inputs, data_samples = data["inputs"], data["data_samples"]
 
         # Process data.
         batch_inputs = []
@@ -119,10 +122,10 @@ class PPYOLOEDetDataPreprocessor(DetDataPreprocessor):
         if self._enable_normalize:
             inputs = (inputs - self.mean) / self.std
 
-        img_metas = [{'batch_input_shape': inputs.shape[2:]}] * len(inputs)
-        data_samples = {'bboxes_labels': data_samples, 'img_metas': img_metas}
+        img_metas = [{"batch_input_shape": inputs.shape[2:]}] * len(inputs)
+        data_samples = {"bboxes_labels": data_samples, "img_metas": img_metas}
 
-        return {'inputs': inputs, 'data_samples': data_samples}
+        return {"inputs": inputs, "data_samples": data_samples}
 
 
 # TODO: No generality. Its input data format is different
@@ -149,37 +152,37 @@ class PPYOLOEBatchRandomResize(BatchSyncRandomResize):
             Defaults to False.
     """
 
-    def __init__(self,
-                 random_size_range: Tuple[int, int],
-                 interval: int = 1,
-                 size_divisor: int = 32,
-                 random_interp=True,
-                 interp_mode: Union[List[str], str] = [
-                     'nearest', 'bilinear', 'bicubic', 'area'
-                 ],
-                 keep_ratio: bool = False) -> None:
+    def __init__(
+        self,
+        random_size_range: Tuple[int, int],
+        interval: int = 1,
+        size_divisor: int = 32,
+        random_interp=True,
+        interp_mode: Union[List[str], str] = ["nearest", "bilinear", "bicubic", "area"],
+        keep_ratio: bool = False,
+    ) -> None:
         super().__init__(random_size_range, interval, size_divisor)
         self.random_interp = random_interp
         self.keep_ratio = keep_ratio
         # TODO: need to support keep_ratio==True
-        assert not self.keep_ratio, 'We do not yet support keep_ratio=True'
+        assert not self.keep_ratio, "We do not yet support keep_ratio=True"
 
         if self.random_interp:
-            assert isinstance(interp_mode, list) and len(interp_mode) > 1,\
-                'While random_interp==True, the type of `interp_mode`' \
-                ' must be list and len(interp_mode) must large than 1'
+            assert isinstance(interp_mode, list) and len(interp_mode) > 1, (
+                "While random_interp==True, the type of `interp_mode`"
+                " must be list and len(interp_mode) must large than 1"
+            )
             self.interp_mode_list = interp_mode
             self.interp_mode = None
         else:
-            assert isinstance(interp_mode, str),\
-                'While random_interp==False, the type of ' \
-                '`interp_mode` must be str'
-            assert interp_mode in ['nearest', 'bilinear', 'bicubic', 'area']
+            assert isinstance(interp_mode, str), (
+                "While random_interp==False, the type of " "`interp_mode` must be str"
+            )
+            assert interp_mode in ["nearest", "bilinear", "bicubic", "area"]
             self.interp_mode_list = None
             self.interp_mode = interp_mode
 
-    def forward(self, inputs: list,
-                data_samples: Tensor) -> Tuple[Tensor, Tensor]:
+    def forward(self, inputs: list, data_samples: Tensor) -> Tuple[Tensor, Tensor]:
         """Resize a batch of images and bboxes to shape ``self._input_size``.
 
         The inputs and data_samples should be list, and
@@ -187,12 +190,13 @@ class PPYOLOEBatchRandomResize(BatchSyncRandomResize):
         ``PPYOLOEDetDataPreprocessor`` and ``yolov5_collate`` with
         ``use_ms_training == True``.
         """
-        assert isinstance(inputs, list),\
-            'The type of inputs must be list. The possible reason for this ' \
-            'is that you are not using it with `PPYOLOEDetDataPreprocessor` ' \
-            'and `yolov5_collate` with use_ms_training == True.'
+        assert isinstance(inputs, list), (
+            "The type of inputs must be list. The possible reason for this "
+            "is that you are not using it with `PPYOLOEDetDataPreprocessor` "
+            "and `yolov5_collate` with use_ms_training == True."
+        )
         message_hub = MessageHub.get_current_instance()
-        if (message_hub.get_info('iter') + 1) % self._interval == 0:
+        if (message_hub.get_info("iter") + 1) % self._interval == 0:
             # get current input size
             self._input_size, interp_mode = self._get_random_size_and_interp()
             if self.random_interp:
@@ -206,8 +210,8 @@ class PPYOLOEBatchRandomResize(BatchSyncRandomResize):
                 h, w = _batch_input.shape[-2:]
                 scale_y = self._input_size[0] / h
                 scale_x = self._input_size[1] / w
-                if scale_x != 1. or scale_y != 1.:
-                    if self.interp_mode in ('nearest', 'area'):
+                if scale_x != 1.0 or scale_y != 1.0:
+                    if self.interp_mode in ("nearest", "area"):
                         align_corners = None
                     else:
                         align_corners = False
@@ -215,7 +219,8 @@ class PPYOLOEBatchRandomResize(BatchSyncRandomResize):
                         _batch_input.unsqueeze(0),
                         size=self._input_size,
                         mode=self.interp_mode,
-                        align_corners=align_corners)
+                        align_corners=align_corners,
+                    )
 
                     # rescale boxes
                     indexes = data_samples[:, 0] == i
@@ -231,7 +236,7 @@ class PPYOLOEBatchRandomResize(BatchSyncRandomResize):
             # convert to Tensor
             return torch.cat(outputs, dim=0), data_samples
         else:
-            raise NotImplementedError('Not implemented yet!')
+            raise NotImplementedError("Not implemented yet!")
 
     def _get_random_size_and_interp(self) -> Tuple[int, int]:
         """Randomly generate a shape in ``_random_size_range`` and a

@@ -2,8 +2,9 @@
 from typing import Optional, Sequence, Union
 
 import torch
-from mmdet.models.task_modules.coders import \
-    DistancePointBBoxCoder as MMDET_DistancePointBBoxCoder
+from mmdet.models.task_modules.coders import (
+    DistancePointBBoxCoder as MMDET_DistancePointBBoxCoder,
+)
 from mmdet.structures.bbox import bbox2distance, distance2bbox
 
 from mmyolo.registry import TASK_UTILS
@@ -22,8 +23,9 @@ class DistancePointBBoxCoder(MMDET_DistancePointBBoxCoder):
         points: torch.Tensor,
         pred_bboxes: torch.Tensor,
         stride: torch.Tensor,
-        max_shape: Optional[Union[Sequence[int], torch.Tensor,
-                                  Sequence[Sequence[int]]]] = None
+        max_shape: Optional[
+            Union[Sequence[int], torch.Tensor, Sequence[Sequence[int]]]
+        ] = None,
     ) -> torch.Tensor:
         """Decode distance prediction to bounding box.
 
@@ -52,11 +54,13 @@ class DistancePointBBoxCoder(MMDET_DistancePointBBoxCoder):
 
         return distance2bbox(points, pred_bboxes, max_shape)
 
-    def encode(self,
-               points: torch.Tensor,
-               gt_bboxes: torch.Tensor,
-               max_dis: float = 16.,
-               eps: float = 0.01) -> torch.Tensor:
+    def encode(
+        self,
+        points: torch.Tensor,
+        gt_bboxes: torch.Tensor,
+        max_dis: float = 16.0,
+        eps: float = 0.01,
+    ) -> torch.Tensor:
         """Encode bounding box to distances. The rewrite is to support batch
         operations.
 

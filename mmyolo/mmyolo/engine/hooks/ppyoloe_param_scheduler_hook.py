@@ -24,14 +24,17 @@ class PPYOLOEParamSchedulerHook(ParamSchedulerHook):
         total_epochs (int): In PPYOLOE, `total_epochs` is set to
             training_epochs x 1.2. Defaults to 360.
     """
+
     priority = 9
 
-    def __init__(self,
-                 warmup_min_iter: int = 1000,
-                 start_factor: float = 0.,
-                 warmup_epochs: int = 5,
-                 min_lr_ratio: float = 0.0,
-                 total_epochs: int = 360):
+    def __init__(
+        self,
+        warmup_min_iter: int = 1000,
+        start_factor: float = 0.0,
+        warmup_epochs: int = 5,
+        min_lr_ratio: float = 0.0,
+        total_epochs: int = 360,
+    ):
 
         self.warmup_min_iter = warmup_min_iter
         self.start_factor = start_factor
@@ -52,17 +55,14 @@ class PPYOLOEParamSchedulerHook(ParamSchedulerHook):
         for group in optimizer.param_groups:
             # If the param is never be scheduled, record the current value
             # as the initial value.
-            group.setdefault('initial_lr', group['lr'])
+            group.setdefault("initial_lr", group["lr"])
 
-        self._base_lr = [
-            group['initial_lr'] for group in optimizer.param_groups
-        ]
+        self._base_lr = [group["initial_lr"] for group in optimizer.param_groups]
         self._min_lr = [i * self.min_lr_ratio for i in self._base_lr]
 
-    def before_train_iter(self,
-                          runner: Runner,
-                          batch_idx: int,
-                          data_batch: Optional[dict] = None):
+    def before_train_iter(
+        self, runner: Runner, batch_idx: int, data_batch: Optional[dict] = None
+    ):
         """Operations before each training iteration.
 
         Args:
@@ -76,7 +76,8 @@ class PPYOLOEParamSchedulerHook(ParamSchedulerHook):
 
         # The minimum warmup is self.warmup_min_iter
         warmup_total_iters = max(
-            round(self.warmup_epochs * dataloader_len), self.warmup_min_iter)
+            round(self.warmup_epochs * dataloader_len), self.warmup_min_iter
+        )
 
         if cur_iters <= warmup_total_iters:
             # warm up
@@ -84,13 +85,18 @@ class PPYOLOEParamSchedulerHook(ParamSchedulerHook):
             factor = self.start_factor * (1 - alpha) + alpha
 
             for group_idx, param in enumerate(optimizer.param_groups):
-                param['lr'] = self._base_lr[group_idx] * factor
+                param["lr"] = self._base_lr[group_idx] * factor
         else:
             for group_idx, param in enumerate(optimizer.param_groups):
                 total_iters = self.total_epochs * dataloader_len
                 lr = self._min_lr[group_idx] + (
-                    self._base_lr[group_idx] -
-                    self._min_lr[group_idx]) * 0.5 * (
-                        math.cos((cur_iters - warmup_total_iters) * math.pi /
-                                 (total_iters - warmup_total_iters)) + 1.0)
-                param['lr'] = lr
+                    self._base_lr[group_idx] - self._min_lr[group_idx]
+                ) * 0.5 * (
+                    math.cos(
+                        (cur_iters - warmup_total_iters)
+                        * math.pi
+                        / (total_iters - warmup_total_iters)
+                    )
+                    + 1.0
+                )
+                param["lr"] = lr

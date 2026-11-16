@@ -9,20 +9,19 @@ from mmengine.config import ConfigDict
 from torch import Tensor
 
 from mmyolo.models import RepVGGBlock
-from mmyolo.models.dense_heads import (RTMDetHead, YOLOv5Head, YOLOv7Head,
-                                       YOLOXHead)
+from mmyolo.models.dense_heads import RTMDetHead, YOLOv5Head, YOLOv7Head, YOLOXHead
 from mmyolo.models.layers import CSPLayerWithTwoConv
+
 from ..backbone import DeployC2f, DeployFocus, GConvFocus, NcnnFocus
-from ..bbox_code import (rtmdet_bbox_decoder, yolov5_bbox_decoder,
-                         yolox_bbox_decoder)
+from ..bbox_code import rtmdet_bbox_decoder, yolov5_bbox_decoder, yolox_bbox_decoder
 from ..nms import batched_nms, efficient_nms, onnx_nms
 
 
 class DeployModel(nn.Module):
 
-    def __init__(self,
-                 baseModel: nn.Module,
-                 postprocess_cfg: Optional[ConfigDict] = None):
+    def __init__(
+        self, baseModel: nn.Module, postprocess_cfg: Optional[ConfigDict] = None
+    ):
         super().__init__()
         self.baseModel = baseModel
         if postprocess_cfg is None:
@@ -32,11 +31,11 @@ class DeployModel(nn.Module):
             self.baseHead = baseModel.bbox_head
             self.__init_sub_attributes()
             self.detector_type = type(self.baseHead)
-            self.pre_top_k = postprocess_cfg.get('pre_top_k', 1000)
-            self.keep_top_k = postprocess_cfg.get('keep_top_k', 100)
-            self.iou_threshold = postprocess_cfg.get('iou_threshold', 0.65)
-            self.score_threshold = postprocess_cfg.get('score_threshold', 0.25)
-            self.backend = postprocess_cfg.get('backend', 1)
+            self.pre_top_k = postprocess_cfg.get("pre_top_k", 1000)
+            self.keep_top_k = postprocess_cfg.get("keep_top_k", 100)
+            self.iou_threshold = postprocess_cfg.get("iou_threshold", 0.65)
+            self.score_threshold = postprocess_cfg.get("score_threshold", 0.25)
+            self.backend = postprocess_cfg.get("backend", 1)
         self.__switch_deploy()
 
     def __init_sub_attributes(self):
@@ -61,13 +60,15 @@ class DeployModel(nn.Module):
                 else:
                     self.baseModel.backbone.stem = GConvFocus(layer)
             elif isinstance(layer, CSPLayerWithTwoConv):
-                setattr(layer, '__class__', DeployC2f)
+                setattr(layer, "__class__", DeployC2f)
 
-    def pred_by_feat(self,
-                     cls_scores: List[Tensor],
-                     bbox_preds: List[Tensor],
-                     objectnesses: Optional[List[Tensor]] = None,
-                     **kwargs):
+    def pred_by_feat(
+        self,
+        cls_scores: List[Tensor],
+        bbox_preds: List[Tensor],
+        objectnesses: Optional[List[Tensor]] = None,
+        **kwargs,
+    ):
         assert len(cls_scores) == len(bbox_preds)
         dtype = cls_scores[0].dtype
         device = cls_scores[0].device
@@ -85,23 +86,21 @@ class DeployModel(nn.Module):
         num_imgs = cls_scores[0].shape[0]
         featmap_sizes = [cls_score.shape[2:] for cls_score in cls_scores]
 
-        mlvl_priors = self.prior_generate(
-            featmap_sizes, dtype=dtype, device=device)
+        mlvl_priors = self.prior_generate(featmap_sizes, dtype=dtype, device=device)
 
         flatten_priors = torch.cat(mlvl_priors)
 
         mlvl_strides = [
             flatten_priors.new_full(
-                (featmap_size[0] * featmap_size[1] * self.num_base_priors, ),
-                stride) for featmap_size, stride in zip(
-                    featmap_sizes, self.featmap_strides)
+                (featmap_size[0] * featmap_size[1] * self.num_base_priors,), stride
+            )
+            for featmap_size, stride in zip(featmap_sizes, self.featmap_strides)
         ]
         flatten_stride = torch.cat(mlvl_strides)
 
         # flatten cls_scores, bbox_preds and objectness
         flatten_cls_scores = [
-            cls_score.permute(0, 2, 3, 1).reshape(num_imgs, -1,
-                                                  self.num_classes)
+            cls_score.permute(0, 2, 3, 1).reshape(num_imgs, -1, self.num_classes)
             for cls_score in cls_scores
         ]
         cls_scores = torch.cat(flatten_cls_scores, dim=1).sigmoid()
@@ -122,11 +121,17 @@ class DeployModel(nn.Module):
 
         scores = cls_scores
 
-        bboxes = bbox_decoder(flatten_priors[None], flatten_bbox_preds,
-                              flatten_stride)
+        bboxes = bbox_decoder(flatten_priors[None], flatten_bbox_preds, flatten_stride)
 
-        return nms_func(bboxes, scores, self.keep_top_k, self.iou_threshold,
-                        self.score_threshold, self.pre_top_k, self.keep_top_k)
+        return nms_func(
+            bboxes,
+            scores,
+            self.keep_top_k,
+            self.iou_threshold,
+            self.score_threshold,
+            self.pre_top_k,
+            self.keep_top_k,
+        )
 
     def select_nms(self):
         if self.backend == 1:
